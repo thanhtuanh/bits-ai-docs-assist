@@ -1,0 +1,53 @@
+<div class="upload-container">
+  <h2>📄 Dokument hochladen</h2>
+  
+  <div class="upload-section">
+    <input 
+      type="file" 
+      (change)="onFileSelected($event)"
+      accept=".pdf,.txt,.doc,.docx"
+      class="file-input"
+      [disabled]="isUploading">
+    
+    <button 
+      (click)="uploadDocument()" 
+      [disabled]="!selectedFile || isUploading"
+      class="upload-btn">
+      <span *ngIf="!isUploading">🚀 Upload & Analysieren</span>
+      <span *ngIf="isUploading">⏳ Wird verarbeitet...</span>
+    </button>
+  </div>
+
+  <!-- Statusmeldungen -->
+  <div *ngIf="uploadMessage" class="message success">
+    {{ uploadMessage }}
+  </div>
+  
+  <div *ngIf="uploadError" class="message error">
+    {{ uploadError }}
+  </div>
+
+  <!-- Ladeindikator -->
+  <div *ngIf="isUploading" class="loading">
+    <div class="spinner"></div>
+    <p>Das Dokument wird von der KI analysiert...</p>
+  </div>
+
+  <!-- Hinweise -->
+  <div class="info-box">
+    <h3>💡 Unterstützte Dateiformate:</h3>
+    <ul>
+      <li>📑 PDF-Dokumente (.pdf)</li>
+      <li>📝 Text-Dateien (.txt)</li>
+      <li>📄 Word-Dokumente (.doc, .docx)</li>
+    </ul>
+    
+    <h3>🤖 Was passiert beim Upload:</h3>
+    <ul>
+      <li>📖 Text wird automatisch extrahiert</li>
+      <li>📝 KI erstellt eine Zusammenfassung</li>
+      <li>🔍 Schlüsselwörter werden erkannt</li>
+      <li>💻 Technologie-Empfehlungen werden generiert</li>
+    </ul>
+  </div>
+</div>

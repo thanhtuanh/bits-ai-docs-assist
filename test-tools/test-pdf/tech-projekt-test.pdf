@@ -1,0 +1,289 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 2018
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 16 Tf
+18.3999999999999986 TL
+0 g
+56.6929133858267775 785.1970866141732586 Td
+(Technisches Projektdokument) Tj
+ET
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0 g
+56.6929133858267775 742.6774015748030706 Td
+(Technisches Projektdokument: Moderne Webanwendung) Tj
+T* () Tj
+T* (PROJEKTÜBERSICHT:) Tj
+T* (Entwicklung einer modernen, skalierbaren Webanwendung für Aufgabenverwaltung mit) Tj
+T* (folgenden Kernfunktionen:) Tj
+T* () Tj
+T* (TECHNISCHE ANFORDERUNGEN:) Tj
+T* (• Frontend: React.js mit TypeScript für typsichere Entwicklung) Tj
+T* (• Backend: Node.js mit Express.js Framework) Tj
+T* (• Datenbank: PostgreSQL für relationale Daten, Redis für Caching) Tj
+T* (• Authentifizierung: JWT-basierte Benutzerauthentifizierung) Tj
+T* (• API: RESTful API-Design mit OpenAPI/Swagger Dokumentation) Tj
+T* () Tj
+T* (FUNKTIONALE ANFORDERUNGEN:) Tj
+T* (1. Benutzerregistrierung und -anmeldung) Tj
+T* (2. Aufgabenerstellung mit Kategorien und Prioritäten) Tj
+T* (3. Drag-and-Drop Interface für Aufgabenverwaltung) Tj
+T* (4. Team-Kollaboration mit Echtzeit-Updates) Tj
+T* (5. Dashboard mit Statistiken und Berichten) Tj
+T* (6. Mobile-responsive Design) Tj
+T* () Tj
+T* (ARCHITEKTUR:) Tj
+T* (- Microservices-Architektur mit Docker-Containern) Tj
+T* (- CI/CD Pipeline mit GitHub Actions) Tj
+T* (- Cloud-Deployment auf AWS mit Load Balancing) Tj
+T* (- Monitoring mit Prometheus und Grafana) Tj
+T* () Tj
+T* (SICHERHEITSASPEKTE:) Tj
+T* (• HTTPS/TLS Verschlüsselung) Tj
+T* (• Input-Validierung und SQL-Injection Schutz) Tj
+T* (• CORS-Konfiguration) Tj
+T* (• Rate Limiting für API-Endpunkte) Tj
+T* (• Regelmäßige Security-Audits) Tj
+T* () Tj
+T* (PROJEKTPHASES:) Tj
+T* (Phase 1: Backend-API und Datenbankdesign \(4 Wochen\)) Tj
+T* (Phase 2: Frontend-Entwicklung und UI/UX \(6 Wochen\)) Tj
+T* (Phase 3: Integration und Testing \(3 Wochen\)) Tj
+T* (Phase 4: Deployment und Go-Live \(2 Wochen\)) Tj
+T* () Tj
+T* (GESCHÄTZTE KOSTEN: €50.000 - €75.000) Tj
+T* (PROJEKTDAUER: 15 Wochen) Tj
+T* (TEAM-GRÖßE: 4 Entwickler) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R ]
+/Count 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 5 0 R
+/F2 6 0 R
+/F3 7 0 R
+/F4 8 0 R
+/F5 9 0 R
+/F6 10 0 R
+/F7 11 0 R
+/F8 12 0 R
+/F9 13 0 R
+/F10 14 0 R
+/F11 15 0 R
+/F12 16 0 R
+/F13 17 0 R
+/F14 18 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+19 0 obj
+<<
+/Producer (jsPDF 2.5.1)
+/CreationDate (D:20250728160836+02'00')
+>>
+endobj
+20 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000002222 00000 n 
+0000004039 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000002279 00000 n 
+0000002404 00000 n 
+0000002534 00000 n 
+0000002667 00000 n 
+0000002804 00000 n 
+0000002927 00000 n 
+0000003056 00000 n 
+0000003188 00000 n 
+0000003324 00000 n 
+0000003452 00000 n 
+0000003579 00000 n 
+0000003708 00000 n 
+0000003841 00000 n 
+0000003943 00000 n 
+0000004287 00000 n 
+0000004373 00000 n 
+trailer
+<<
+/Size 21
+/Root 20 0 R
+/Info 19 0 R
+/ID [ <DCC6E8AB8768B60B3E8D9D4930F420F6> <DCC6E8AB8768B60B3E8D9D4930F420F6> ]
+>>
+startxref
+4477
+%%EOF
