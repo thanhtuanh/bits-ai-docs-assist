@@ -29,7 +29,7 @@ spring:
 # OpenAI Test Configuration (leer für Tests)
 openai:
   api:
-    key: # Absichtlich leer für Tests - Fallback wird getestet
+    key: ${OPENAI_API_KEY:} # Absichtlich leer für Tests - Fallback wird getestet
     url: https://api.openai.com/v1/completions
   model: gpt-3.5-turbo-instruct
   timeout: 30  # Kürzere Timeouts für Tests

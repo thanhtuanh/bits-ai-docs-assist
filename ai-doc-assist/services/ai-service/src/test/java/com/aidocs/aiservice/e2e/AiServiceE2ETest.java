@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -40,15 +41,20 @@ class AiServiceE2ETest {
     @Autowired
     private ObjectMapper objectMapper;
 
+     @Autowired
+    private LettuceConnectionFactory lettuceConnectionFactory; // 🔑 Injection der Factory
+
     @Container
     static GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
             .withExposedPorts(6379)
             .withReuse(true);
 
     @Container
-    static GenericContainer<?> eurekaServer = new GenericContainer<>("springcloud/eureka:latest")
-            .withExposedPorts(8761)
-            .withReuse(true);
+    static GenericContainer<?> eurekaServer = new GenericContainer<>("quay.io/mock-eureka-server:1.0")
+        .withExposedPorts(8761)
+        .withReuse(true);
+
+
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -66,8 +72,12 @@ class AiServiceE2ETest {
     @BeforeEach
     void setUp() {
         baseUrl = "http://localhost:" + port;
+        // 🔧 Fix: LettuceConnectionFactory sicher starten
+        if (!lettuceConnectionFactory.isRunning()) {
+            lettuceConnectionFactory.start();
+        }
     }
-
+     
     @Test
     void e2e_completeAnalysisWorkflow_ShouldWorkEndToEnd() {
         // Given - Echter HTTP Request
