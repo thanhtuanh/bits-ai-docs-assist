@@ -441,3 +441,79 @@ public class TestMonitoringExtension implements TestWatcher {
 /**
  * Performance Metrics Collector
  */
+public class PerformanceMetricsCollector {
+    private static final Logger log = LoggerFactory.getLogger(PerformanceMetricsCollector.class);
+    private static final Map<String, PerformanceMetric> metrics = new ConcurrentHashMap<>();
+    
+    public static void recordMetric(String name, long value, String unit) {
+        metrics.put(name, new PerformanceMetric(name, value, unit, LocalDateTime.now()));
+    }
+    
+    public static void recordResponseTime(String endpoint, long responseTime) {
+        recordMetric("response_time_" + endpoint, responseTime, "ms");
+    }
+    
+    public static void recordThroughput(String operation, long requestsPerSecond) {
+        recordMetric("throughput_" + operation, requestsPerSecond, "rps");
+    }
+    
+    public static void recordMemoryUsage(long memoryMB) {
+        recordMetric("memory_usage", memoryMB, "MB");
+    }
+    
+    public static void recordCacheHitRate(String cacheType, double hitRate) {
+        recordMetric("cache_hit_rate_" + cacheType, Math.round(hitRate * 100), "%");
+    }
+    
+    public static void exportMetrics() {
+        try {
+            Path metricsFile = Paths.get("target/test-reports/performance-metrics.txt");
+            Files.createDirectories(metricsFile.getParent());
+            
+            try (FileWriter writer = new FileWriter(metricsFile.toFile())) {
+                writer.write("PERFORMANCE METRICS\n");
+                writer.write("===================\n\n");
+                writer.write("Collected at: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "\n\n");
+                
+                metrics.values().stream()
+                    .sorted(Comparator.comparing(PerformanceMetric::getName))
+                    .forEach(metric -> {
+                        try {
+                            writer.write(String.format("%s: %d %s (recorded at %s)\n",
+                                metric.getName(),
+                                metric.getValue(),
+                                metric.getUnit(),
+                                metric.getTimestamp().format(DateTimeFormatter.ISO_LOCAL_TIME)
+                            ));
+                        } catch (IOException e) {
+                            log.error("Failed to write metric: " + metric.getName(), e);
+                        }
+                    });
+            }
+            
+            log.info("Performance metrics exported to: {}", metricsFile.toAbsolutePath());
+            
+        } catch (IOException e) {
+            log.error("Failed to export performance metrics", e);
+        }
+    }
+    
+    private static class PerformanceMetric {
+        private final String name;
+        private final long value;
+        private final String unit;
+        private final LocalDateTime timestamp;
+        
+        public PerformanceMetric(String name, long value, String unit, LocalDateTime timestamp) {
+            this.name = name;
+            this.value = value;
+            this.unit = unit;
+            this.timestamp = timestamp;
+        }
+        
+        public String getName() { return name; }
+        public long getValue() { return value; }
+        public String getUnit() { return unit; }
+        public LocalDateTime getTimestamp() { return timestamp; }
+    }
+}

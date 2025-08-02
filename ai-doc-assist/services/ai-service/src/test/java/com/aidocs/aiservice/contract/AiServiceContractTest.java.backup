@@ -52,7 +52,7 @@ class AiServiceContractTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 // HTTP Status
-                .andExpect(status().isOk())
+                .andExpected(status().isOk())
                 // Content Type
                 .andExpect(header().string("Content-Type", "application/json"))
                 // Response Structure
@@ -255,7 +255,7 @@ class AiServiceContractTest {
         mockMvc.perform(post("/api/ai/analyze")
                 .contentType(MediaType.APPLICATION_XML)
                 .content("<text>test</text>"))
-                .andExpect(status().isUnsupportedMediaType());
+                .andExpected(status().isUnsupportedMediaType());
     }
 
     /**
@@ -348,7 +348,7 @@ class AiServiceContractTest {
         mockMvc.perform(post("/api/ai/analyze")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(badRequest)))
-                .andExpect(status().isBadRequest()); // 400
+                .andExpected(status().isBadRequest()); // 400
 
         // Test Case 2: Method Not Allowed (405) für falsche HTTP Methode
         mockMvc.perform(get("/api/ai/analyze"))
