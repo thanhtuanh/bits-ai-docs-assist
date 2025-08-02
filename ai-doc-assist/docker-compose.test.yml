@@ -1,0 +1,238 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # REDIS für Caching Tests
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: ai-service-redis-test
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-test-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ai-service-test-network
+
+  # ==========================================
+  # EUREKA Server für Service Discovery Tests
+  # ==========================================
+  eureka-server:
+    image: springcloud/eureka:latest
+    container_name: ai-service-eureka-test
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://localhost:8761/eureka/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ai-service-test-network
+
+  # ==========================================
+  # AI-SERVICE für Integration/E2E Tests
+  # ==========================================
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-service-app-test
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
+      - LOGGING_LEVEL_COM_AIDOCS_AISERVICE=DEBUG
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/api/ai/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - ai-service-test-network
+    restart: unless-stopped
+
+  # ==========================================
+  # WireMock für External API Tests
+  # ==========================================
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: ai-service-wiremock-test
+    ports:
+      - "8089:8080"
+    volumes:
+      - ./src/test/resources/wiremock:/home/wiremock
+    command: 
+      - --global-response-templating
+      - --verbose
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/__admin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ai-service-test-network
+
+  # ==========================================
+  # PostgreSQL für Database Integration Tests
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-service-postgres-test
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=aiservice_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+      - ./src/test/resources/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d aiservice_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ai-service-test-network
+
+  # ==========================================
+  # Prometheus für Metrics Tests
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-service-prometheus-test
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./src/test/resources/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    depends_on:
+      - ai-service
+    networks:
+      - ai-service-test-network
+
+  # ==========================================
+  # Test Runner Container
+  # ==========================================
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: ai-service-test-runner
+    volumes:
+      - .:/workspace
+      - maven-test-cache:/root/.m2
+    working_dir: /workspace
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - WIREMOCK_URL=http://wiremock:8080
+      - AI_SERVICE_URL=http://ai-service:8084
+      - POSTGRES_URL=jdbc:postgresql://postgres:5432/aiservice_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+      wiremock:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - ai-service-test-network
+    profiles:
+      - test-execution
+
+  # ==========================================
+  # Load Test Generator (Artillery)
+  # ==========================================
+  load-test:
+    image: artilleryio/artillery:latest
+    container_name: ai-service-load-test
+    volumes:
+      - ./src/test/resources/artillery:/scripts
+      - ./target/load-test-results:/results
+    command: run --output /results/load-test-report.json /scripts/load-test.yml
+    depends_on:
+      ai-service:
+        condition: service_healthy
+    networks:
+      - ai-service-test-network
+    profiles:
+      - load-test
+
+  # ==========================================
+  # Test Results Collector
+  # ==========================================
+  test-collector:
+    image: alpine:latest
+    container_name: ai-service-test-collector
+    volumes:
+      - ./target:/workspace/target
+      - ./test-reports:/workspace/reports
+    command: |
+      sh -c "
+        echo 'Collecting test results...'
+        mkdir -p /workspace/reports
+        cp -r /workspace/target/surefire-reports/* /workspace/reports/ 2>/dev/null || true
+        cp -r /workspace/target/failsafe-reports/* /workspace/reports/ 2>/dev/null || true
+        cp -r /workspace/target/site/jacoco/* /workspace/reports/ 2>/dev/null || true
+        echo 'Test results collected successfully'
+      "
+    networks:
+      - ai-service-test-network
+    profiles:
+      - post-test
+
+networks:
+  ai-service-test-network:
+    driver: bridge
+    name: ai-service-test-network
+
+volumes:
+  redis-test-data:
+    name: ai-service-redis-test-data
+  postgres-test-data:
+    name: ai-service-postgres-test-data
+  maven-test-cache:
+    name: ai-service-maven-test-cache
+
+# ==========================================
+# EXTENSION: docker-compose.override.yml
+# für lokale Entwicklung
+# ==========================================

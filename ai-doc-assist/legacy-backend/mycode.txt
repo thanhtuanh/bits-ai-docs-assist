@@ -1,0 +1,667 @@
+### ./pom.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.bits</groupId>
+    <artifactId>ai-doc-assist</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>ai-doc-assist</name>
+    <description>AI Doc Assist Project</description>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>2.0.27</version>
+        </dependency>
+        <!-- OpenAI Dependency entfernt - verwenden HTTP-basierte Lösung -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+### ./src/test/java/com/bits/aidocassist/test/DocumentServiceTest.java
+package com.bits.aidocassist.test;
+
+import com.bits.aidocassist.model.Document;
+import com.bits.aidocassist.service.DocumentService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@SpringBootTest
+public class DocumentServiceTest {
+
+    @Autowired
+    private DocumentService documentService;
+
+    @Test
+    public void testSaveDocument() {
+        Document document = new Document();
+        document.setTitle("Test Document");
+        document.setContent("This is a test document.");
+        document.setSummary("Test document summary.");
+        document.setKeywords("test, document, summary");
+        document.setSuggestedComponents("Spring Boot, PostgreSQL, Angular");
+
+        Document savedDocument = documentService.saveDocument(document);
+        assertNotNull(savedDocument.getId());
+    }
+}
+
+### ./src/main/resources/application.properties
+# Default profile
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.jpa.hibernate.ddl-auto=update
+spring.h2.console.enabled=true
+
+# File upload settings
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+
+# OpenAI API settings - wird aus Environment Variable gelesen
+openai.api.key=${OPENAI_API_KEY:}
+openai.model=gpt-3.5-turbo
+openai.timeout.seconds=60
+
+# CORS settings
+spring.web.cors.allowed-origins=http://localhost:4200
+spring.web.cors.allowed-methods=GET,POST,PUT,DELETE,OPTIONS
+spring.web.cors.allowed-headers=*
+spring.web.cors.allow-credentials=true
+
+# Actuator for health checks
+management.endpoints.web.exposure.include=health
+management.endpoint.health.show-details=always
+
+# Logging für OpenAI Debug (optional)
+logging.level.com.theokanning.openai=DEBUG
+
+### ./src/main/java/com/bits/aidocassist/demo/DemoRunner.java
+package com.bits.aidocassist.demo;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import com.bits.aidocassist.model.Document;
+import com.bits.aidocassist.service.AiService;
+import com.bits.aidocassist.service.DocumentService;
+
+@Component
+public class DemoRunner implements CommandLineRunner {
+
+    @Autowired
+    private AiService aiService;
+
+    @Autowired
+    private DocumentService documentService;
+    
+    @Value("${openai.api.key:}")
+    private String openAiApiKey;
+
+    @Override
+    public void run(String... args) throws Exception {
+        // Kurzer Demo-Text für Kompatibilität
+        String exampleText = "Entwicklung einer modernen Webanwendung für Aufgabenverwaltung mit React und Spring Boot. Das System soll eine REST-API, PostgreSQL-Datenbank und Docker-Container verwenden.";
+
+        try {
+            // OpenAI Status prüfen
+            if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
+                System.out.println("🤖 OpenAI API Key konfiguriert - verwende GPT-3.5-turbo");
+            } else {
+                System.out.println("⚠️  Kein OpenAI API Key gefunden - verwende Fallback-Methoden");
+            }
+
+            // AI-Services testen
+            String summary = aiService.summarizeText(exampleText);
+            String keywords = aiService.extractKeywords(exampleText);
+            String suggestedComponents = aiService.suggestComponents(exampleText);
+
+            // Document erstellen
+            Document document = new Document();
+            document.setTitle("Demo-Projekt mit KI-Analyse");
+            document.setContent(exampleText);
+            document.setSummary(summary);
+            document.setKeywords(keywords);
+            document.setSuggestedComponents(suggestedComponents);
+
+            documentService.saveDocument(document);
+
+            // Ergebnisse ausgeben
+            System.out.println("\n📊 === KI-ANALYSE ERGEBNISSE ===");
+            System.out.println("📝 Zusammenfassung: " + summary);
+            System.out.println("🔍 Schlüsselwörter: " + keywords);
+            System.out.println("💻 Technologie-Empfehlungen: " + suggestedComponents);
+            System.out.println("✅ Demo-Dokument erfolgreich erstellt!");
+
+        } catch (Exception e) {
+            System.err.println("❌ Fehler beim Ausführen der Demo: " + e.getMessage());
+            
+            // Fallback Demo-Dokument
+            Document document = new Document();
+            document.setTitle("Demo-Projekt (Fallback)");
+            document.setContent(exampleText);
+            document.setSummary("Demo-Zusammenfassung ohne KI");
+            document.setKeywords("demo, webanwendung, react, spring");
+            document.setSuggestedComponents("React, Spring Boot, PostgreSQL");
+
+            documentService.saveDocument(document);
+            System.out.println("📄 Fallback Demo-Dokument erstellt");
+        }
+    }
+}
+
+### ./src/main/java/com/bits/aidocassist/repository/DocumentRepository.java
+package com.bits.aidocassist.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import com.bits.aidocassist.model.Document;
+
+@Repository
+public interface DocumentRepository extends JpaRepository<Document, Long> {
+}
+
+### ./src/main/java/com/bits/aidocassist/util/PdfProcessor.java
+package com.bits.aidocassist.util;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.io.IOException;
+
+@Component
+public class PdfProcessor {
+
+    public static String extractTextFromPdf(File pdfFile) throws IOException {
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            PDFTextStripper pdfTextStripper = new PDFTextStripper();
+            return pdfTextStripper.getText(document);
+        }
+    }
+}
+
+### ./src/main/java/com/bits/aidocassist/config/CorsConfig.java
+package com.bits.aidocassist.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/api/**")
+                        .allowedOrigins("https://bits-ai-docs-assits-demo.onrender.com")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*");
+            }
+        };
+    }
+}
+
+
+
+### ./src/main/java/com/bits/aidocassist/controller/DocumentController.java
+package com.bits.aidocassist.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.bits.aidocassist.model.Document;
+import com.bits.aidocassist.service.DocumentService;
+import com.bits.aidocassist.service.AiService;
+import com.bits.aidocassist.util.PdfProcessor;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+@RestController
+@RequestMapping("/api/documents")
+@CrossOrigin(origins = "http://localhost:4200")
+public class DocumentController {
+
+    @Autowired
+    private DocumentService documentService;
+
+    @Autowired
+    private AiService aiService;
+
+    @PostMapping
+    public ResponseEntity<Document> createDocument(@RequestParam("file") MultipartFile file) {
+        try {
+            String content;
+            String title = file.getOriginalFilename();
+            
+            if (title != null && title.toLowerCase().endsWith(".pdf")) {
+                // Für PDF-Dateien
+                Path tempFile = Files.createTempFile("upload", ".pdf");
+                file.transferTo(tempFile.toFile());
+                content = PdfProcessor.extractTextFromPdf(tempFile.toFile());
+                Files.deleteIfExists(tempFile);
+            } else {
+                // Für Text-Dateien
+                content = new String(file.getBytes());
+            }
+
+            // AI-Services verwenden
+            String summary = aiService.summarizeText(content);
+            String keywords = aiService.extractKeywords(content);
+            String suggestedComponents = aiService.suggestComponents(content);
+
+            // Document erstellen
+            Document document = new Document();
+            document.setTitle(title != null ? title : "Unbekanntes Dokument");
+            document.setContent(content);
+            document.setSummary(summary);
+            document.setKeywords(keywords);
+            document.setSuggestedComponents(suggestedComponents);
+
+            Document savedDocument = documentService.saveDocument(document);
+            return ResponseEntity.ok(savedDocument);
+            
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Document> getDocument(@PathVariable Long id) {
+        Document document = documentService.getDocumentById(id);
+        if (document == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(document);
+    }
+}
+
+### ./src/main/java/com/bits/aidocassist/AiDocAssistApplication.java
+package com.bits.aidocassist;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class AiDocAssistApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(AiDocAssistApplication.class, args);
+    }
+}
+
+### ./src/main/java/com/bits/aidocassist/model/Document.java
+package com.bits.aidocassist.model;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+import lombok.Data;
+
+@Entity
+@Data
+public class Document {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(length = 500)
+    private String title;
+    
+    @Column(columnDefinition = "TEXT")
+    private String content;
+    
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+    
+    @Column(columnDefinition = "TEXT")  // ← Auch Keywords als TEXT
+    private String keywords;
+    
+    @Column(columnDefinition = "TEXT")
+    private String suggestedComponents;
+}
+
+### ./src/main/java/com/bits/aidocassist/service/DocumentService.java
+package com.bits.aidocassist.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.bits.aidocassist.model.Document;
+import com.bits.aidocassist.repository.DocumentRepository;
+
+@Service
+public class DocumentService {
+
+    @Autowired
+    private DocumentRepository documentRepository;
+
+    public Document saveDocument(Document document) {
+        return documentRepository.save(document);
+    }
+
+    public Document getDocumentById(Long id) {
+        return documentRepository.findById(id).orElse(null);
+    }
+}
+
+
+### ./src/main/java/com/bits/aidocassist/service/EnhancedAiService.java
+package com.bits.aidocassist.service;
+
+public class EnhancedAiService {
+
+}
+
+
+### ./src/main/java/com/bits/aidocassist/service/AiService.java
+package com.bits.aidocassist.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class AiService {
+
+    @Value("${openai.api.key:}")
+    private String openAiApiKey;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String OPENAI_URL = "https://api.openai.com/v1/completions";
+
+    public String summarizeText(String text) {
+        if (text.length() < 100) {
+            return text + " [Text zu kurz für KI-Zusammenfassung]";
+        }
+
+        if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
+            try {
+                String prompt = createSummarizationPrompt(text);
+                String result = callOpenAi(prompt, 200);
+                System.out.println("✅ OpenAI Zusammenfassung erfolgreich erstellt");
+                return result;
+            } catch (Exception e) {
+                System.err.println("❌ OpenAI Summarization failed: " + e.getMessage());
+                return getFallbackSummary(text);
+            }
+        } else {
+            System.out.println("⚠️ Kein OpenAI API Key - verwende Fallback für Zusammenfassung");
+        }
+        return getFallbackSummary(text);
+    }
+
+    public String extractKeywords(String text) {
+        if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
+            try {
+                String prompt = createKeywordPrompt(text);
+                String result = callOpenAi(prompt, 100);
+                System.out.println("✅ OpenAI Keywords erfolgreich extrahiert");
+                return result;
+            } catch (Exception e) {
+                System.err.println("❌ OpenAI Keyword extraction failed: " + e.getMessage());
+                return getFallbackKeywords(text);
+            }
+        } else {
+            System.out.println("⚠️ Kein OpenAI API Key - verwende Fallback für Keywords");
+        }
+        return getFallbackKeywords(text);
+    }
+
+    public String suggestComponents(String text) {
+        if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
+            try {
+                String prompt = createComponentPrompt(text);
+                String result = callOpenAi(prompt, 150);
+                System.out.println("✅ OpenAI Komponenten-Empfehlungen erfolgreich erstellt");
+                return result;
+            } catch (Exception e) {
+                System.err.println("❌ OpenAI Component suggestion failed: " + e.getMessage());
+                return getFallbackComponents(text);
+            }
+        } else {
+            System.out.println("⚠️ Kein OpenAI API Key - verwende Fallback für Komponenten");
+        }
+        return getFallbackComponents(text);
+    }
+
+    private String callOpenAi(String prompt, int maxTokens) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(openAiApiKey);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "gpt-3.5-turbo-instruct");
+        requestBody.put("prompt", prompt);
+        requestBody.put("max_tokens", maxTokens);
+        requestBody.put("temperature", 0.3);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        
+        try {
+            System.out.println("🤖 Rufe OpenAI API auf...");
+            ResponseEntity<Map> response = restTemplate.exchange(
+                OPENAI_URL, HttpMethod.POST, entity, Map.class);
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> body = response.getBody();
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    String result = (String) choices.get(0).get("text");
+                    return result != null ? result.trim() : "Keine Antwort erhalten";
+                }
+            } else {
+                System.err.println("❌ OpenAI API Status: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ HTTP Request to OpenAI failed: " + e.getMessage());
+            throw e;
+        }
+        
+        return "API-Aufruf fehlgeschlagen";
+    }
+
+    private String createSummarizationPrompt(String text) {
+        String inputText = text.length() > 2000 ? text.substring(0, 2000) + "..." : text;
+        return String.format(
+            "Erstelle eine präzise, professionelle Zusammenfassung des folgenden deutschen Dokuments. " +
+            "Die Zusammenfassung soll 2-3 Sätze lang sein und die wichtigsten Punkte hervorheben:\n\n%s\n\nZusammenfassung:",
+            inputText
+        );
+    }
+
+    private String createKeywordPrompt(String text) {
+        String inputText = text.length() > 1500 ? text.substring(0, 1500) + "..." : text;
+        return String.format(
+            "Extrahiere die 12 wichtigsten Schlüsselwörter aus dem folgenden deutschen Text. " +
+            "Gib nur die Wörter zurück, getrennt durch Kommas:\n\n%s\n\nSchlüsselwörter:",
+            inputText
+        );
+    }
+
+    private String createComponentPrompt(String text) {
+        String inputText = text.length() > 1500 ? text.substring(0, 1500) + "..." : text;
+        return String.format(
+            "Basierend auf der folgenden deutschen Projektbeschreibung, empfehle die 8-10 wichtigsten " +
+            "modernen Technologien und Frameworks. Gib nur die Namen zurück, getrennt durch Kommas:\n\n%s\n\nTechnologien:",
+            inputText
+        );
+    }
+
+    // Fallback-Methoden
+    private String getFallbackSummary(String text) {
+        if (text.length() > 400) {
+            return text.substring(0, 400) + "... [Lokale Zusammenfassung - OpenAI nicht verfügbar]";
+        }
+        return text + " [Lokale Zusammenfassung - OpenAI nicht verfügbar]";
+    }
+
+    private String getFallbackKeywords(String text) {
+        String[] words = text.toLowerCase()
+            .replaceAll("[^a-züäöß\\s]", "")
+            .split("\\s+");
+        
+        Set<String> uniqueKeywords = new HashSet<>();
+        
+        for (String word : words) {
+            if (word.length() >= 4 && word.length() <= 15 && 
+                !word.matches(".*[0-9].*") && 
+                !isCommonWord(word)) {
+                uniqueKeywords.add(word);
+            }
+        }
+        
+        String result = uniqueKeywords.stream()
+            .sorted()
+            .limit(15)
+            .collect(Collectors.joining(", "));
+        
+        if (result.length() > 800) {
+            result = result.substring(0, 797) + "...";
+        }
+        
+        return result.isEmpty() ? "Keine Schlüsselwörter gefunden" : result;
+    }
+    
+    private String getFallbackComponents(String text) {
+        text = text.toLowerCase();
+        Set<String> suggestions = new HashSet<>();
+        
+        // Web-Technologien
+        if (text.contains("web") || text.contains("website") || text.contains("frontend")) {
+            suggestions.addAll(Set.of("React", "Angular", "Vue.js"));
+        }
+        
+        // Backend-Technologien
+        if (text.contains("api") || text.contains("rest") || text.contains("backend")) {
+            suggestions.addAll(Set.of("Spring Boot", "Node.js", "Express.js"));
+        }
+        
+        // Datenbank
+        if (text.contains("daten") || text.contains("database") || text.contains("speicher")) {
+            suggestions.addAll(Set.of("PostgreSQL", "MongoDB", "MySQL"));
+        }
+        
+        // Cloud & DevOps
+        if (text.contains("docker") || text.contains("cloud") || text.contains("deployment")) {
+            suggestions.addAll(Set.of("Docker", "Kubernetes", "AWS"));
+        }
+        
+        // Mobile
+        if (text.contains("mobile") || text.contains("app")) {
+            suggestions.addAll(Set.of("React Native", "Flutter"));
+        }
+        
+        // Testing
+        if (text.contains("test") || text.contains("qualität")) {
+            suggestions.addAll(Set.of("JUnit", "Jest", "Cypress"));
+        }
+        
+        // Sicherheit
+        if (text.contains("sicherheit") || text.contains("security") || text.contains("authentifizierung")) {
+            suggestions.addAll(Set.of("Spring Security", "JWT", "OAuth"));
+        }
+        
+        // Standard-Technologien falls nichts spezifisches gefunden
+        if (suggestions.isEmpty()) {
+            suggestions.addAll(Set.of("Spring Boot", "React", "PostgreSQL", "Docker"));
+        }
+        
+        return String.join(", ", suggestions);
+    }
+    
+    private boolean isCommonWord(String word) {
+        Set<String> commonWords = Set.of(
+            "eine", "einer", "eines", "dem", "den", "der", "die", "das",
+            "und", "oder", "aber", "doch", "sondern", "für", "mit", "bei",
+            "nach", "von", "zu", "an", "auf", "über", "unter", "vor",
+            "hinter", "neben", "zwischen", "durch", "ohne", "gegen",
+            "wird", "werden", "wurde", "worden", "sein", "haben", "hatte",
+            "sind", "waren", "ist", "war", "kann", "könnte", "sollte",
+            "würde", "muss", "soll", "will", "nicht", "auch", "noch",
+            "nur", "schon", "bereits", "immer", "alle", "jede", "jeden",
+            "mehr", "sehr", "dann", "wenn", "dass", "als", "wie", "zum"
+        );
+        return commonWords.contains(word);
+    }
+}
+

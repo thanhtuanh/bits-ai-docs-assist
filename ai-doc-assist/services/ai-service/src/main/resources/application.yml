@@ -1,0 +1,47 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: ai-service
+  
+  # Redis Configuration für Caching
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    connection-timeout: 2000ms
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+# OpenAI Configuration (aus Ihrem legacy-backend)
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+    url: https://api.openai.com/v1/completions
+  model: gpt-3.5-turbo-instruct
+  timeout: 60
+  max-tokens: 200
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.aidocs.aiservice: DEBUG
+    org.springframework.web.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{correlationId}] %logger{36} - %msg%n"

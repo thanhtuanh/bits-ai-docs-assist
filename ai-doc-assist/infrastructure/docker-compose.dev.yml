@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ai_docs
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ai-docs-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - ai-docs-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ai-docs-network
+
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - ai-docs-network
+
+  eureka-server:
+    image: steeltoeoss/eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - ai-docs-network
+
+  # Microservices
+  api-gateway:
+    build: 
+      context: ../services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-docs-network
+
+  auth-service:
+    build: 
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-docs-network
+
+  document-service:
+    build: 
+      context: ../services/document-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-docs-network
+
+  storage-service:
+    build: 
+      context: ../services/storage-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    depends_on:
+      - minio
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-docs-network
+
+  ai-service:
+    build: 
+      context: ../services/ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    depends_on:
+      - redis
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - ai-docs-network
+
+  notification-service:
+    build: 
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    depends_on:
+      - rabbitmq
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-docs-network
+
+  user-service:
+    build: 
+      context: ../services/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    depends_on:
+      - postgres
+      - eureka-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-docs-network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  ai-docs-network:
+    driver: bridge

@@ -1,0 +1,70 @@
+# Test Configuration für AI Service
+server:
+  port: 0  # Random port für Tests
+
+spring:
+  application:
+    name: ai-service-test
+  
+  # Redis Test Configuration
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 1000ms
+    connection-timeout: 1000ms
+    # Für Tests - wird durch Mocks ersetzt
+    
+  # H2 In-Memory Database falls benötigt
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+
+# OpenAI Test Configuration (leer für Tests)
+openai:
+  api:
+    key: # Absichtlich leer für Tests - Fallback wird getestet
+    url: https://api.openai.com/v1/completions
+  model: gpt-3.5-turbo-instruct
+  timeout: 30  # Kürzere Timeouts für Tests
+  max-tokens: 100
+
+# Eureka Test Configuration (deaktiviert)
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+# Management Endpoints für Tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging für Tests
+logging:
+  level:
+    com.aidocs.aiservice: DEBUG
+    org.springframework.web: INFO
+    org.springframework.test: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+
+# Test-spezifische Properties
+test:
+  mock:
+    openai:
+      enabled: true
+    redis:
+      enabled: true
