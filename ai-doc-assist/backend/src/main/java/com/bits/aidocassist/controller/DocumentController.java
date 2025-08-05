@@ -22,7 +22,7 @@ import com.bits.aidocassist.service.AiService;
 import com.bits.aidocassist.service.DocumentService;
 import com.bits.aidocassist.util.PdfProcessor;
 
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "https://bits-ai-docs-assist-demo.onrender.com")
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {

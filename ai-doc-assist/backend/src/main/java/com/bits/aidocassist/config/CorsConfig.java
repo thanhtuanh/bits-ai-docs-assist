@@ -5,24 +5,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+// Neue CorsConfig.java mit korrekten Origins
 @Configuration
 public class CorsConfig {
-
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        .allowedOrigins(
-                            "https://bits-ai-docs-assist-demo.onrender.com",  // ✅ Ihr Frontend
-                                    "https://bits-ai-docs-assits-demo.onrender.com",     // ✅ Vorübegehender Falschen Frontend
-                            "http://localhost:4200"                          // ✅ Lokale Entwicklung
-                        )
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
+                registry.addMapping("/**")
+                        .allowedOrigins("https://bits-ai-docs-assist-demo.onrender.com")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true)
-                        .maxAge(3600);
+                        .allowCredentials(true);
             }
         };
     }
