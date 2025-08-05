@@ -13,6 +13,11 @@
       class="file-input"
       [disabled]="isProcessing">
     
+    <div class="file-info" *ngIf="selectedFile">
+      <span class="file-name">📎 {{ selectedFile.name }}</span>
+      <span class="file-size">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
+    </div>
+    
     <button 
       (click)="uploadDocument()" 
       [disabled]="!selectedFile || isProcessing"
@@ -32,6 +37,10 @@
       class="text-input">
     </textarea>
     
+    <div class="char-counter">
+      {{ (inputText?.length || 0) | number }} / 50.000 Zeichen
+    </div>
+    
     <button 
       (click)="analyzeText()" 
       [disabled]="!inputText || isProcessing"
@@ -39,12 +48,59 @@
       <span *ngIf="!isProcessing">🤖 Text analysieren</span>
       <span *ngIf="isProcessing">⏳ Wird analysiert...</span>
     </button>
+  </div>
 
-    <div *ngIf="analysisResult" class="analysis-output">
-      <h3>📊 Analyse-Ergebnis</h3>
-      <p><strong>Zusammenfassung:</strong> {{ analysisResult.summary }}</p>
-      <p><strong>Schlüsselwörter:</strong> {{ analysisResult.keywords }}</p>
-      <p><strong>Empfohlene Technologien:</strong> {{ analysisResult.suggestedComponents }}</p>
+  <!-- Fortschrittsanzeige -->
+  <div class="progress-section" *ngIf="isProcessing">
+    <h3>🔄 Analyse läuft...</h3>
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Fehler-Anzeige -->
+  <div class="error-card" *ngIf="uploadError">
+    <div class="error-content">
+      <strong>⚠️ Fehler:</strong>
+      <p>{{ uploadError }}</p>
+    </div>
+  </div>
+
+  <!-- Analyse-Ergebnisse -->
+  <div class="results-section" *ngIf="analysisResult && !isProcessing">
+    <h3>📊 Analyse-Ergebnis</h3>
+    
+    <!-- Zusammenfassung -->
+    <div class="result-card">
+      <h4>📝 Zusammenfassung</h4>
+      <p>{{ analysisResult.summary }}</p>
+    </div>
+
+    <!-- Schlüsselwörter -->
+    <div class="result-card">
+      <h4>🔍 Schlüsselwörter</h4>
+      <p>{{ analysisResult.keywords }}</p>
+    </div>
+
+    <!-- Technologie-Empfehlungen -->
+    <div class="result-card">
+      <h4>💻 Technologie-Empfehlungen</h4>
+      <p>{{ analysisResult.suggestedComponents }}</p>
+    </div>
+
+    <!-- ✅ FEEDBACK-COMPONENT ENTFERNT (bis sie erstellt ist) -->
+    
+    <!-- Einfaches Feedback -->
+    <div class="simple-feedback">
+      <h4>💬 War diese Analyse hilfreich?</h4>
+      <div class="feedback-buttons">
+        <button class="btn-helpful" (click)="submitQuickFeedback(true)">
+          👍 Ja, hilfreich
+        </button>
+        <button class="btn-not-helpful" (click)="submitQuickFeedback(false)">  
+          👎 Nicht hilfreich
+        </button>
+      </div>
     </div>
   </div>
 
@@ -66,3 +122,240 @@
     </ul>
   </div>
 </div>
+
+<style>
+/* Vereinfachtes CSS für sofortigen Build */
+.upload-container {
+  max-width: 750px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #222;
+}
+
+.upload-card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 25px;
+}
+
+.upload-card h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.file-input, .text-input {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+.text-input {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.file-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.upload-btn {
+  width: 100%;
+  background: linear-gradient(90deg, #6c757d, #495057);
+  color: #fff;
+  font-size: 1rem;
+  padding: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #868e96, #343a40);
+}
+
+.upload-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.progress-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 15px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  animation: progress-animation 2s infinite;
+}
+
+@keyframes progress-animation {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+.error-card {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 25px;
+}
+
+.error-content strong {
+  color: #721c24;
+}
+
+.error-content p {
+  color: #721c24;
+  margin: 5px 0 0 0;
+}
+
+.results-section {
+  margin-bottom: 25px;
+}
+
+.results-section h3 {
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 1.4rem;
+}
+
+.result-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+  border-left: 4px solid #007bff;
+}
+
+.result-card h4 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.result-card p {
+  margin: 0;
+  line-height: 1.6;
+  color: #555;
+}
+
+.simple-feedback {
+  background: #e7f3ff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.simple-feedback h4 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.btn-helpful {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-not-helpful {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.info-box {
+  background: #f9f9f9;
+  border-left: 4px solid #6c757d;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.info-box h3 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.info-box ul {
+  padding-left: 20px;
+  margin: 5px 0;
+}
+
+.info-box li {
+  margin: 4px 0;
+  color: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .upload-container {
+    padding: 15px;
+  }
+  
+  .feedback-buttons {
+    flex-direction: column;
+  }
+}
+</style>

@@ -91,3 +91,11 @@
   border-left: 4px solid #6c757d;
   border-radius: 8px;
 }
+
+.feedback-container {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
