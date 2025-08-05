@@ -4,9 +4,8 @@ import { Component } from '@angular/core';
     selector: 'app-root',
     template: `
     <div class="app-container">
-      <h1>AI Document Assistant</h1>
       <nav>
-        <a routerLink="/upload">Upload Document</a>
+     <!--   <a routerLink="/upload">Upload Document</a> -->
       </nav>
       <router-outlet></router-outlet>
     </div>
