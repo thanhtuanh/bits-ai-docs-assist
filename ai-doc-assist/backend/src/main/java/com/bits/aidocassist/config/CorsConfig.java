@@ -12,13 +12,14 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
+                registry.addMapping("/api/**")
                         .allowedOrigins(
-                            "https://bits-ai-docs-assist-demo.onrender.com",  // ✅ KORREKTE URL
+                            "https://bits-ai-docs-assist-demo.onrender.com",
                             "http://localhost:4200"
                         )
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
+                        .exposedHeaders("*")
                         .allowCredentials(true)
                         .maxAge(3600);
             }
