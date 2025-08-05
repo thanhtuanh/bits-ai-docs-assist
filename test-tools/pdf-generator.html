@@ -3,109 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Test-Datei Generator</title>
+    <title>PDF Test-Datei Generator (BITS Edition)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-        button {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        .info {
-            background-color: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .preview {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .preview h3 {
-            color: #495057;
-            margin-top: 0;
-        }
-        .download-info {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            display: none;
-        }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        .button-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+        button { background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .preview { background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin-top: 20px; border-radius: 8px; font-family: monospace; }
+        .download-info { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📄 PDF Test-Datei Generator</h1>
-        
-        <div class="info">
-            <strong>Zweck:</strong> Erstellen Sie verschiedene PDF-Dateien zum Testen Ihrer AI Document Assistant Anwendung.
-        </div>
+        <h1>📄 PDF Test-Datei Generator (BITS Edition)</h1>
 
         <div class="button-group">
-            <button onclick="generateTechPDF()">🔧 Tech-Projekt PDF</button>
-            <button onclick="generateBusinessPDF()">💼 Business-Plan PDF</button>
-            <button onclick="generateResearchPDF()">🔬 Forschungspapier PDF</button>
-            <button onclick="generateSimplePDF()">📝 Einfaches Dokument PDF</button>
+            <button onclick="generateBitsTechPDF()">🔧 BITS Tech-Projekt</button>
+            <button onclick="generateBitsConsultingPDF()">💼 BITS Consulting Report</button>
+            <button onclick="generateBitsMLPDF()">🤖 BITS AI & ML Studie</button>
+            <button onclick="generateBitsSimplePDF()">📝 Einfaches Testdokument</button>
         </div>
 
         <div class="preview">
-            <h3>Vorschau des nächsten PDFs:</h3>
-            <div id="previewContent">
-                Klicken Sie auf einen Button oben, um eine PDF-Vorschau zu sehen...
-            </div>
+            <h3>Vorschau:</h3>
+            <div id="previewContent">Wählen Sie oben eine Datei aus.</div>
         </div>
 
         <div id="downloadInfo" class="download-info">
-            ✅ PDF wurde erfolgreich heruntergeladen! Sie können es jetzt in Ihrer Anwendung testen.
+            ✅ PDF wurde heruntergeladen – bereit für AI Docs Assist Tests.
         </div>
     </div>
 
@@ -113,238 +40,113 @@
         const { jsPDF } = window.jspdf;
 
         function showDownloadInfo() {
-            const info = document.getElementById('downloadInfo');
-            info.style.display = 'block';
-            setTimeout(() => {
-                info.style.display = 'none';
-            }, 5000);
+            document.getElementById('downloadInfo').style.display = 'block';
+            setTimeout(() => document.getElementById('downloadInfo').style.display = 'none', 5000);
         }
 
         function updatePreview(title, content) {
-            document.getElementById('previewContent').innerHTML = `
-                <strong>${title}</strong><br><br>
-                ${content.substring(0, 300)}...
-            `;
+            document.getElementById('previewContent').innerHTML = `<strong>${title}</strong><br><br>${content.substring(0, 300)}...`;
         }
 
-        function generateTechPDF() {
-            const content = `Technisches Projektdokument: Moderne Webanwendung
-
-PROJEKTÜBERSICHT:
-Entwicklung einer modernen, skalierbaren Webanwendung für Aufgabenverwaltung mit folgenden Kernfunktionen:
-
-TECHNISCHE ANFORDERUNGEN:
-• Frontend: React.js mit TypeScript für typsichere Entwicklung
-• Backend: Node.js mit Express.js Framework
-• Datenbank: PostgreSQL für relationale Daten, Redis für Caching
-• Authentifizierung: JWT-basierte Benutzerauthentifizierung
-• API: RESTful API-Design mit OpenAPI/Swagger Dokumentation
-
-FUNKTIONALE ANFORDERUNGEN:
-1. Benutzerregistrierung und -anmeldung
-2. Aufgabenerstellung mit Kategorien und Prioritäten
-3. Drag-and-Drop Interface für Aufgabenverwaltung
-4. Team-Kollaboration mit Echtzeit-Updates
-5. Dashboard mit Statistiken und Berichten
-6. Mobile-responsive Design
-
-ARCHITEKTUR:
-- Microservices-Architektur mit Docker-Containern
-- CI/CD Pipeline mit GitHub Actions
-- Cloud-Deployment auf AWS mit Load Balancing
-- Monitoring mit Prometheus und Grafana
-
-SICHERHEITSASPEKTE:
-• HTTPS/TLS Verschlüsselung
-• Input-Validierung und SQL-Injection Schutz
-• CORS-Konfiguration
-• Rate Limiting für API-Endpunkte
-• Regelmäßige Security-Audits
-
-PROJEKTPHASES:
-Phase 1: Backend-API und Datenbankdesign (4 Wochen)
-Phase 2: Frontend-Entwicklung und UI/UX (6 Wochen)
-Phase 3: Integration und Testing (3 Wochen)
-Phase 4: Deployment und Go-Live (2 Wochen)
-
-GESCHÄTZTE KOSTEN: €50.000 - €75.000
-PROJEKTDAUER: 15 Wochen
-TEAM-GRÖßE: 4 Entwickler`;
-
-            updatePreview("Tech-Projekt PDF", content);
-
+        function createPDF(title, content, filename) {
             const doc = new jsPDF();
             doc.setFontSize(16);
-            doc.text('Technisches Projektdokument', 20, 20);
+            doc.text(title, 20, 20);
             doc.setFontSize(12);
-            
             const lines = doc.splitTextToSize(content, 170);
             doc.text(lines, 20, 35);
-            
-            doc.save('tech-projekt-test.pdf');
+            doc.save(filename);
             showDownloadInfo();
         }
 
-        function generateBusinessPDF() {
-            const content = `Geschäftsplan: Digitale Transformation Initiative
+        function generateBitsTechPDF() {
+            const content = `BITS Digital Solutions: Technisches Projektdokument
 
-EXECUTIVE SUMMARY:
-Unser Unternehmen plant eine umfassende digitale Transformation zur Steigerung der Effizienz und Kundenzufriedenheit.
+PROJEKTZIEL:
+Entwicklung einer skalierbaren Cloud-Anwendung zur Dokumentenverwaltung mit KI-gestützter Analyse.
 
-MARKTANALYSE:
-Der Markt für digitale Lösungen wächst um 15% jährlich. Unsere Zielgruppe umfasst kleine und mittlere Unternehmen mit 50-500 Mitarbeitern.
+TECHNOLOGIE-STACK:
+• Frontend: Angular 16, Responsive Design
+• Backend: Spring Boot (REST API), Java 17
+• Datenbank: PostgreSQL, Elasticsearch
+• Cloud & DevOps: Docker, Kubernetes, GitLab CI/CD, AWS
+• Sicherheit: Keycloak, OAuth2, JWT
 
-STRATEGISCHE ZIELE:
-• Umsatzsteigerung um 25% innerhalb von 2 Jahren
-• Kostensenkung durch Automatisierung um 30%
-• Verbesserung der Kundenerfahrung
-• Erhöhung der Mitarbeiterproduktivität
+KOMPETENZBEREICHE:
+- Digital Solutions
+- Cloud Native Entwicklung
+- AI Integration (OpenAI API, ML-Modelle)
+- Security by Design
 
-LÖSUNGSANSATZ:
-1. Cloud-Migration der bestehenden Systeme
-2. Implementierung von CRM und ERP-Systemen
-3. Einführung von Business Intelligence Tools
-4. Automatisierung wiederkehrender Prozesse
-5. Schulung der Mitarbeiter
-
-FINANZIELLE PROJEKETION:
-Jahr 1: Investition €200.000, ROI: -€50.000
-Jahr 2: Zusätzliche Investition €100.000, ROI: €150.000
-Jahr 3: ROI: €400.000
-
-RISIKOBEWERTUNG:
-• Technische Herausforderungen bei der Migration
-• Widerstand der Mitarbeiter gegen Veränderungen
-• Datenschutz und Compliance-Anforderungen
-• Abhängigkeit von externen Dienstleistern
-
-IMPLEMENTIERUNGSPLAN:
-Q1 2024: Systemanalyse und Anbieterauswahl
-Q2 2024: Pilotprojekt und erste Migration
-Q3 2024: Vollständige Implementierung
-Q4 2024: Optimierung und Mitarbeiterschulung
-
-SUCCESS METRICS:
-- Reduzierung der Bearbeitungszeit um 40%
-- Steigerung der Kundenzufriedenheit auf 95%
-- Verringerung der IT-Wartungskosten um 25%`;
-
-            updatePreview("Business-Plan PDF", content);
-
-            const doc = new jsPDF();
-            doc.setFontSize(16);
-            doc.text('Geschäftsplan: Digitale Transformation', 20, 20);
-            doc.setFontSize(12);
-            
-            const lines = doc.splitTextToSize(content, 170);
-            doc.text(lines, 20, 35);
-            
-            doc.save('business-plan-test.pdf');
-            showDownloadInfo();
+PHASEN:
+1. Architekturentwurf & Prototyp
+2. Entwicklung & Integration
+3. Testautomatisierung (JUnit, Cypress)
+4. Deployment & Betrieb (AWS EKS)
+`;
+            updatePreview("BITS Tech-Projekt", content);
+            createPDF("BITS Tech-Projekt", content, 'bits-tech-projekt.pdf');
         }
 
-        function generateResearchPDF() {
-            const content = `Forschungspapier: KI-gestützte Dokumentenanalyse
+        function generateBitsConsultingPDF() {
+            const content = `BITS Consulting Report: Digital Transformation
+
+PROJEKTHINTERGRUND:
+Beratung zur Optimierung von Geschäftsprozessen im Rahmen der digitalen Transformation.
+
+KERNBEREICHE:
+• Prozessanalyse & Workflow-Optimierung
+• Einführung von Collaboration-Tools (Jira, Confluence, Miro)
+• Cloud-Migration (Azure)
+• Change Management & Schulungen
+
+STRATEGIE:
+1. IST-Analyse
+2. Zielarchitektur
+3. Implementierungsplan
+4. Erfolgsmessung (KPIs)
+`;
+            updatePreview("BITS Consulting Report", content);
+            createPDF("BITS Consulting Report", content, 'bits-consulting-report.pdf');
+        }
+
+        function generateBitsMLPDF() {
+            const content = `BITS AI & ML Studie: Dokumentenanalyse
 
 ABSTRACT:
-Diese Studie untersucht die Effektivität von Machine Learning-Algorithmen bei der automatischen Klassifizierung und Zusammenfassung von Textdokumenten.
+Analyse der Effizienz von KI-Algorithmen bei der automatisierten Dokumentenverarbeitung.
 
-EINLEITUNG:
-Die exponentiell wachsende Menge an digitalen Dokumenten erfordert innovative Ansätze zur automatischen Verarbeitung und Analyse.
+METHODIK:
+• Datengrundlage: 5000 Unternehmensdokumente
+• Modelle: OpenAI GPT, TensorFlow, PyTorch
+• Pipeline: Tokenisierung, Named Entity Recognition, Topic Clustering
+• Evaluationsmetriken: Accuracy, F1-Score, Recall
 
-METHODOLOGIE:
-• Datensammlung: 10.000 Dokumente aus verschiedenen Domänen
-• Preprocessing: Tokenisierung, Stemming, Stopword-Removal
-• Feature Extraction: TF-IDF, Word2Vec, BERT-Embeddings
-• Klassifikationsalgorithmen: SVM, Random Forest, Neural Networks
-• Evaluationsmetriken: Precision, Recall, F1-Score
+ERGEBNIS:
+- GPT liefert präzise Zusammenfassungen
+- TensorFlow Modelle für Klassifikation
+- Empfohlene Architektur: Hybridansatz
+`;
+            updatePreview("BITS AI & ML Studie", content);
+            createPDF("BITS AI & ML Studie", content, 'bits-ai-ml-studie.pdf');
+        }
 
-ERGEBNISSE:
-- BERT-basierte Modelle zeigten die höchste Genauigkeit (94.2%)
-- Random Forest erreichte 87.5% Genauigkeit bei geringerer Rechenzeit
-- SVM zeigte robuste Performance bei kleinen Datensätzen (85.1%)
+        function generateBitsSimplePDF() {
+            const content = `BITS Einfaches Testdokument
 
-DISKUSSION:
-Die Ergebnisse zeigen, dass moderne Transformer-Architekturen wie BERT überlegen sind, jedoch erhebliche Rechenressourcen benötigen.
+ZWECK:
+Dieses Dokument dient zum Testen der AI Document Assistant Funktionen.
 
-LIMITATIONEN:
-• Begrenzte Sprachunterstützung (nur Deutsch und Englisch)
-• Domänenspezifische Bias in den Trainingsdaten
-• Hoher Rechenbedarf für BERT-Modelle
-
-ZUKÜNFTIGE FORSCHUNG:
-- Entwicklung effizienterer Modellarchitekturen
-- Untersuchung von Few-Shot Learning Ansätzen
-- Integration von multimodalen Daten (Text + Bilder)
+INHALT:
+• Kurzer Beispieltext mit Technologiebegriffen: Angular, Spring Boot, Docker, PostgreSQL
+• Ziel: Test von Zusammenfassung, Keyword-Extraktion und Technologie-Erkennung
 
 SCHLUSSFOLGERUNG:
-KI-gestützte Dokumentenanalyse zeigt großes Potenzial für praktische Anwendungen, erfordert jedoch weitere Forschung zur Optimierung.
-
-REFERENZEN:
-[1] Smith, J. et al. (2023). "Advanced NLP Techniques"
-[2] Mueller, A. (2022). "Document Classification Methods"
-[3] Wang, L. (2024). "BERT Applications in Industry"`;
-
-            updatePreview("Forschungspapier PDF", content);
-
-            const doc = new jsPDF();
-            doc.setFontSize(16);
-            doc.text('Forschungspapier: KI-gestützte Dokumentenanalyse', 20, 20);
-            doc.setFontSize(12);
-            
-            const lines = doc.splitTextToSize(content, 170);
-            doc.text(lines, 20, 35);
-            
-            doc.save('forschungspapier-test.pdf');
-            showDownloadInfo();
+Dieses Dokument sollte eine prägnante AI-Antwort erzeugen.
+`;
+            updatePreview("BITS Einfaches Testdokument", content);
+            createPDF("BITS Einfaches Testdokument", content, 'bits-einfach-test.pdf');
         }
-
-        function generateSimplePDF() {
-            const content = `Einfaches Testdokument
-
-Hallo! Dies ist ein einfaches Testdokument für Ihre AI Document Assistant Anwendung.
-
-HAUPTTHEMEN:
-• Webentwicklung
-• Künstliche Intelligenz  
-• Projektmanagement
-• Datenanalyse
-
-BESCHREIBUNG:
-Dieses Dokument dient zum Testen der grundlegenden Funktionalitäten Ihrer Anwendung wie:
-- Texterkennung aus PDF-Dateien
-- Automatische Zusammenfassung
-- Keyword-Extraktion
-- Technologie-Empfehlungen
-
-SCHLÜSSELWÖRTER:
-JavaScript, Python, React, Machine Learning, API, Database, Frontend, Backend
-
-EMPFOHLENE TECHNOLOGIEN:
-Basierend auf dem Inhalt könnte die KI folgende Technologien vorschlagen:
-- Spring Boot für Backend-Entwicklung
-- Angular oder React für Frontend
-- PostgreSQL für Datenspeicherung
-- Docker für Containerisierung
-
-Viel Erfolg beim Testen Ihrer Anwendung!`;
-
-            updatePreview("Einfaches Dokument PDF", content);
-
-            const doc = new jsPDF();
-            doc.setFontSize(16);
-            doc.text('Einfaches Testdokument', 20, 20);
-            doc.setFontSize(12);
-            
-            const lines = doc.splitTextToSize(content, 170);
-            doc.text(lines, 20, 35);
-            
-            doc.save('einfaches-test-dokument.pdf');
-            showDownloadInfo();
-        }
-
-        // Zeige anfängliche Vorschau
-        updatePreview("Willkommen", "Wählen Sie oben einen PDF-Typ aus, um eine Testdatei zu generieren. Diese PDFs enthalten verschiedene Arten von Inhalten, um die verschiedenen Funktionen Ihrer AI Document Assistant Anwendung zu testen.");
     </script>
 </body>
 </html>

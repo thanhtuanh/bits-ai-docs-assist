@@ -10,7 +10,7 @@
 endobj
 4 0 obj
 <<
-/Length 2297
+/Length 801
 >>
 stream
 0.5670000000000001 w
@@ -20,57 +20,31 @@ BT
 18.3999999999999986 TL
 0 g
 56.6929133858267775 785.1970866141732586 Td
-(Forschungspapier: KI-gestützte Dokumentenanalyse) Tj
+(BITS Consulting Report) Tj
 ET
 BT
 /F1 12 Tf
 13.7999999999999989 TL
 0 g
 56.6929133858267775 742.6774015748030706 Td
-(Forschungspapier: KI-gestützte Dokumentenanalyse) Tj
+(BITS Consulting Report: Digital Transformation) Tj
 T* () Tj
-T* (ABSTRACT:) Tj
-T* (Diese Studie untersucht die Effektivität von Machine Learning-Algorithmen bei der) Tj
-T* (automatischen Klassifizierung und Zusammenfassung von Textdokumenten.) Tj
+T* (PROJEKTHINTERGRUND:) Tj
+T* (Beratung zur Optimierung von Geschäftsprozessen im Rahmen der digitalen) Tj
+T* (Transformation.) Tj
 T* () Tj
-T* (EINLEITUNG:) Tj
-T* (Die exponentiell wachsende Menge an digitalen Dokumenten erfordert innovative Ansätze) Tj
-T* (zur automatischen Verarbeitung und Analyse.) Tj
+T* (KERNBEREICHE:) Tj
+T* (• Prozessanalyse & Workflow-Optimierung) Tj
+T* (• Einführung von Collaboration-Tools \(Jira, Confluence, Miro\)) Tj
+T* (• Cloud-Migration \(Azure\)) Tj
+T* (• Change Management & Schulungen) Tj
 T* () Tj
-T* (METHODOLOGIE:) Tj
-T* (• Datensammlung: 10.000 Dokumente aus verschiedenen Domänen) Tj
-T* (• Preprocessing: Tokenisierung, Stemming, Stopword-Removal) Tj
-T* (• Feature Extraction: TF-IDF, Word2Vec, BERT-Embeddings) Tj
-T* (• Klassifikationsalgorithmen: SVM, Random Forest, Neural Networks) Tj
-T* (• Evaluationsmetriken: Precision, Recall, F1-Score) Tj
+T* (STRATEGIE:) Tj
+T* (1. IST-Analyse) Tj
+T* (2. Zielarchitektur) Tj
+T* (3. Implementierungsplan) Tj
+T* (4. Erfolgsmessung \(KPIs\)) Tj
 T* () Tj
-T* (ERGEBNISSE:) Tj
-T* (- BERT-basierte Modelle zeigten die höchste Genauigkeit \(94.2%\)) Tj
-T* (- Random Forest erreichte 87.5% Genauigkeit bei geringerer Rechenzeit) Tj
-T* (- SVM zeigte robuste Performance bei kleinen Datensätzen \(85.1%\)) Tj
-T* () Tj
-T* (DISKUSSION:) Tj
-T* (Die Ergebnisse zeigen, dass moderne Transformer-Architekturen wie BERT überlegen) Tj
-T* (sind, jedoch erhebliche Rechenressourcen benötigen.) Tj
-T* () Tj
-T* (LIMITATIONEN:) Tj
-T* (• Begrenzte Sprachunterstützung \(nur Deutsch und Englisch\)) Tj
-T* (• Domänenspezifische Bias in den Trainingsdaten) Tj
-T* (• Hoher Rechenbedarf für BERT-Modelle) Tj
-T* () Tj
-T* (ZUKÜNFTIGE FORSCHUNG:) Tj
-T* (- Entwicklung effizienterer Modellarchitekturen) Tj
-T* (- Untersuchung von Few-Shot Learning Ansätzen) Tj
-T* (- Integration von multimodalen Daten \(Text + Bilder\)) Tj
-T* () Tj
-T* (SCHLUSSFOLGERUNG:) Tj
-T* (KI-gestützte Dokumentenanalyse zeigt großes Potenzial für praktische Anwendungen,) Tj
-T* (erfordert jedoch weitere Forschung zur Optimierung.) Tj
-T* () Tj
-T* (REFERENZEN:) Tj
-T* ([1] Smith, J. et al. \(2023\). "Advanced NLP Techniques") Tj
-T* ([2] Mueller, A. \(2022\). "Document Classification Methods") Tj
-T* ([3] Wang, L. \(2024\). "BERT Applications in Industry") Tj
 ET
 endstream
 endobj
@@ -244,7 +218,7 @@ endobj
 19 0 obj
 <<
 /Producer (jsPDF 2.5.1)
-/CreationDate (D:20250728160945+02'00')
+/CreationDate (D:20250805083221+02'00')
 >>
 endobj
 20 0 obj
@@ -258,33 +232,33 @@ endobj
 xref
 0 21
 0000000000 65535 f 
-0000002501 00000 n 
-0000004318 00000 n 
+0000001004 00000 n 
+0000002821 00000 n 
 0000000015 00000 n 
 0000000152 00000 n 
-0000002558 00000 n 
-0000002683 00000 n 
-0000002813 00000 n 
-0000002946 00000 n 
-0000003083 00000 n 
-0000003206 00000 n 
-0000003335 00000 n 
-0000003467 00000 n 
-0000003603 00000 n 
-0000003731 00000 n 
-0000003858 00000 n 
-0000003987 00000 n 
-0000004120 00000 n 
-0000004222 00000 n 
-0000004566 00000 n 
-0000004652 00000 n 
+0000001061 00000 n 
+0000001186 00000 n 
+0000001316 00000 n 
+0000001449 00000 n 
+0000001586 00000 n 
+0000001709 00000 n 
+0000001838 00000 n 
+0000001970 00000 n 
+0000002106 00000 n 
+0000002234 00000 n 
+0000002361 00000 n 
+0000002490 00000 n 
+0000002623 00000 n 
+0000002725 00000 n 
+0000003069 00000 n 
+0000003155 00000 n 
 trailer
 <<
 /Size 21
 /Root 20 0 R
 /Info 19 0 R
-/ID [ <D6FC176FB9B8B7E2A8CC7E14EEE8215D> <D6FC176FB9B8B7E2A8CC7E14EEE8215D> ]
+/ID [ <E64BB25C09C88ACE1D051E72075C209E> <E64BB25C09C88ACE1D051E72075C209E> ]
 >>
 startxref
-4756
+3259
 %%EOF

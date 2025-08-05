@@ -2,29 +2,30 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
-
+import { FormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
 import { DocumentUploadComponent } from './document-upload/document-upload.component';
 import { DocumentSummaryComponent } from './document-summary/document-summary.component';
 
 const routes: Routes = [
-    { path: 'upload', component: DocumentUploadComponent },
-    { path: 'summary/:id', component: DocumentSummaryComponent },
-    { path: '', redirectTo: '/upload', pathMatch: 'full' }
+  { path: '', component: DocumentUploadComponent, pathMatch: 'full' },
+  { path: 'summary/:id', component: DocumentSummaryComponent },
+  { path: '**', redirectTo: '', pathMatch: 'full' }
 ];
 
 @NgModule({
-    declarations: [
-        AppComponent,
-        DocumentUploadComponent,
-        DocumentSummaryComponent
-    ],
-    imports: [
-        BrowserModule,
-        HttpClientModule,
-        RouterModule.forRoot(routes)
-    ],
-    providers: [],
-    bootstrap: [AppComponent]
+  declarations: [
+    AppComponent,
+    DocumentUploadComponent,
+    DocumentSummaryComponent
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    FormsModule,
+    RouterModule.forRoot(routes)
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}

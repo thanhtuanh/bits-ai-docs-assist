@@ -1,33 +1,25 @@
-# Build stage
+# Frontend Dockerfile - VEREINFACHT und REPARIERT
 FROM node:18-alpine AS build
-
 WORKDIR /app
 
-# Copy package files
+# Dependencies installieren
 COPY package*.json ./
+RUN npm ci --production=false
 
-# Install dependencies with legacy peer deps to avoid conflicts
-RUN npm install --legacy-peer-deps
-
-# Copy source code
+# Source-Code kopieren
 COPY . .
 
-# Build the Angular app for production
-RUN npm run build -- --configuration production
+# ✅ Environment-Dateien für localhost überschreiben
+RUN echo 'export const environment = { production: false, apiUrl: "http://localhost:8080/api" };' > src/environments/environment.ts
+RUN echo 'export const environment = { production: false, apiUrl: "http://localhost:8080/api" };' > src/environments/environment.prod.ts
 
-# Runtime stage
+# ✅ Einfacher Build ohne spezielle Konfiguration
+RUN npm run build
+
+# Production Image
 FROM nginx:alpine
-
-# Remove default nginx static assets
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copy built app to nginx (note: check your dist folder structure)
-COPY --from=build /app/dist/ai-doc-assist-frontend /usr/share/nginx/html
-
-# Copy custom nginx config if needed
-# COPY nginx.conf /etc/nginx/nginx.conf
-
-# Expose port
+COPY --from=build /app/dist/ai-doc-assist-frontend/ /usr/share/nginx/html/
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# ✅ Einfache nginx.conf
+RUN echo 'server { listen 80; location / { root /usr/share/nginx/html; index index.html; try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf

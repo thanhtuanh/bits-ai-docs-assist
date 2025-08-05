@@ -1,39 +1,54 @@
 <div class="upload-container">
-  <h2>📄 Dokument hochladen</h2>
-  
-  <div class="upload-section">
+  <!-- Titel -->
+  <h1 class="title">📂 AI Document Assistant</h1>
+
+  <!-- Upload Card -->
+  <div class="upload-card">
+    <h2>📄 Dokument hochladen</h2>
+    
     <input 
       type="file" 
       (change)="onFileSelected($event)"
       accept=".pdf,.txt,.doc,.docx"
       class="file-input"
-      [disabled]="isUploading">
+      [disabled]="isProcessing">
     
     <button 
       (click)="uploadDocument()" 
-      [disabled]="!selectedFile || isUploading"
+      [disabled]="!selectedFile || isProcessing"
       class="upload-btn">
-      <span *ngIf="!isUploading">🚀 Upload & Analysieren</span>
-      <span *ngIf="isUploading">⏳ Wird verarbeitet...</span>
+      <span *ngIf="!isProcessing">🚀 Upload & Analysieren</span>
+      <span *ngIf="isProcessing">⏳ Wird verarbeitet...</span>
     </button>
   </div>
 
-  <!-- Statusmeldungen -->
-  <div *ngIf="uploadMessage" class="message success">
-    {{ uploadMessage }}
-  </div>
-  
-  <div *ngIf="uploadError" class="message error">
-    {{ uploadError }}
+  <!-- Text Analyse Card -->
+  <div class="upload-card">
+    <h2>📝 Text direkt analysieren</h2>
+    
+    <textarea 
+      [(ngModel)]="inputText" 
+      placeholder="Geben Sie hier Ihren Text ein..." 
+      class="text-input">
+    </textarea>
+    
+    <button 
+      (click)="analyzeText()" 
+      [disabled]="!inputText || isProcessing"
+      class="upload-btn">
+      <span *ngIf="!isProcessing">🤖 Text analysieren</span>
+      <span *ngIf="isProcessing">⏳ Wird analysiert...</span>
+    </button>
+
+    <div *ngIf="analysisResult" class="analysis-output">
+      <h3>📊 Analyse-Ergebnis</h3>
+      <p><strong>Zusammenfassung:</strong> {{ analysisResult.summary }}</p>
+      <p><strong>Schlüsselwörter:</strong> {{ analysisResult.keywords }}</p>
+      <p><strong>Empfohlene Technologien:</strong> {{ analysisResult.suggestedComponents }}</p>
+    </div>
   </div>
 
-  <!-- Ladeindikator -->
-  <div *ngIf="isUploading" class="loading">
-    <div class="spinner"></div>
-    <p>Das Dokument wird von der KI analysiert...</p>
-  </div>
-
-  <!-- Hinweise -->
+  <!-- Info Card -->
   <div class="info-box">
     <h3>💡 Unterstützte Dateiformate:</h3>
     <ul>
@@ -42,7 +57,7 @@
       <li>📄 Word-Dokumente (.doc, .docx)</li>
     </ul>
     
-    <h3>🤖 Was passiert beim Upload:</h3>
+    <h3>⚡ Was passiert beim Upload:</h3>
     <ul>
       <li>📖 Text wird automatisch extrahiert</li>
       <li>📝 KI erstellt eine Zusammenfassung</li>
