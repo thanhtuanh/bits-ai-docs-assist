@@ -1,15 +1,22 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <title>AI Document Assistant</title>
     <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
+    <!-- ✅ URL-Tippfehler-Redirect -->
+    <script>
+        if (window.location.hostname === 'bits-ai-docs-assits-demo.onrender.com') {
+            window.location.replace('https://bits-ai-docs-assist-demo.onrender.com' + 
+                                   window.location.pathname + 
+                                   window.location.search);
+        }
+    </script>
 </head>
-
 <body>
     <app-root></app-root>
 </body>
-
 </html>
