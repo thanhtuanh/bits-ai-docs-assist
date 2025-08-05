@@ -14,10 +14,15 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins("http://localhost:4200")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedOrigins(
+                            "https://bits-ai-docs-assist-demo.onrender.com",  // ✅ Ihr Frontend
+                                    "https://bits-ai-docs-assits-demo.onrender.com",     // ✅ Vorübegehender Falschen Frontend
+                            "http://localhost:4200"                          // ✅ Lokale Entwicklung
+                        )
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(true)
+                        .maxAge(3600);
             }
         };
     }
