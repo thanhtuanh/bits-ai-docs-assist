@@ -9,9 +9,9 @@ RUN npm ci --production=false
 # Source-Code kopieren
 COPY . .
 
-# ✅ Environment-Dateien für localhost überschreiben
-RUN echo 'export const environment = { production: false, apiUrl: "http://localhost:8080/api" };' > src/environments/environment.ts
-RUN echo 'export const environment = { production: false, apiUrl: "http://localhost:8080/api" };' > src/environments/environment.prod.ts
+# ✅ Environment-Dateien für Docker-Container überschreiben
+RUN echo 'export const environment = { production: false, apiUrl: "http://localhost:8080/api" }; console.log("🔧 Docker Environment loaded:", environment);' > src/environments/environment.ts
+RUN echo 'export const environment = { production: true, apiUrl: "http://localhost:8080/api" }; console.log("🔧 Docker Production Environment loaded:", environment);' > src/environments/environment.prod.ts
 
 # ✅ Einfacher Build ohne spezielle Konfiguration
 RUN npm run build

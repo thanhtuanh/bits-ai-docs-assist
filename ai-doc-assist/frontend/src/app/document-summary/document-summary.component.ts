@@ -19,7 +19,7 @@ export class DocumentSummaryComponent implements OnInit {
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.documentService.getDocument(id).subscribe((data: any) => {
+    this.documentService.getDocument(id.toString()).subscribe((data: any) => {
       this.summary = data.summary;
       this.keywords = data.keywords;
       this.suggestedComponents = data.suggestedComponents;

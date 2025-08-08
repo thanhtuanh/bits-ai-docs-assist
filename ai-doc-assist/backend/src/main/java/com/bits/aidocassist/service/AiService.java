@@ -1,6 +1,8 @@
 package com.bits.aidocassist.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -20,36 +23,32 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Service
 public class AiService {
 
     @Value("${openai.api.key:}")
     private String openAiApiKey;
 
-    @Value("${ai.analysis.summary.max-input-chars:5000}")
-    private int summaryMaxChars;
+    @Value("${openai.api.model:gpt-4-turbo-preview}")
+    private String openAiModel;
 
-    @Value("${ai.analysis.keywords.max-input-chars:3000}")
-    private int keywordsMaxChars;
-
-    @Value("${ai.analysis.components.max-input-chars:3000}")
-    private int componentsMaxChars;
-
-    @Value("${ai.analysis.summary.max-tokens:400}")
-    private int summaryMaxTokens;
-
-    @Value("${ai.analysis.keywords.max-tokens:200}")
-    private int keywordsMaxTokens;
-
-    @Value("${ai.analysis.components.max-tokens:300}")
-    private int componentsMaxTokens;
+    @Autowired
+    private TextPreprocessingService preprocessingService;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String OPENAI_URL = "https://api.openai.com/v1/completions";
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    // Verwende Chat Completions API statt Legacy Completions
+    private static final String OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
 
     // Qualitäts-Metriken
     private final Map<String, QualityMetrics> qualityMetrics = new HashMap<>();
 
+    /**
+     * OPTIMIERTE Zusammenfassung mit strukturiertem Output
+     */
     public String summarizeText(String text) {
         long startTime = System.currentTimeMillis();
         
@@ -57,215 +56,238 @@ public class AiService {
             return text + " [Text zu kurz für KI-Zusammenfassung]";
         }
 
+        // Text-Preprocessing für bessere Ergebnisse
+        String processedText = preprocessingService.preprocessText(text);
+        
         if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
             try {
-                String prompt = createAdvancedSummarizationPrompt(text);
-                String result = callOpenAi(prompt, summaryMaxTokens, "summarization");
+                String prompt = createOptimizedSummarizationPrompt(processedText);
+                String result = callOpenAiChat(prompt, 500, 0.3, "summarization");
                 
-                // Qualität messen
+                // Post-Processing für strukturierte Ausgabe
+                result = postProcessSummary(result);
+                
                 recordQualityMetrics("summarization", startTime, true, result.length());
-                
-                System.out.println("✅ OpenAI Zusammenfassung erfolgreich erstellt");
+                System.out.println("✅ OpenAI Zusammenfassung erfolgreich (GPT-4)");
                 return result;
             } catch (Exception e) {
                 recordQualityMetrics("summarization", startTime, false, 0);
                 System.err.println("❌ OpenAI Summarization failed: " + e.getMessage());
-                return getFallbackSummary(text);
+                return getEnhancedFallbackSummary(processedText);
             }
-        } else {
-            System.out.println("⚠️ Kein OpenAI API Key - verwende Fallback für Zusammenfassung");
         }
-        return getFallbackSummary(text);
+        return getEnhancedFallbackSummary(processedText);
     }
 
+    /**
+     * OPTIMIERTE Keyword-Extraktion mit Kategorisierung
+     */
     public String extractKeywords(String text) {
         long startTime = System.currentTimeMillis();
         
+        // Text-Preprocessing
+        String processedText = preprocessingService.preprocessText(text);
+        
         if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
             try {
-                String prompt = createAdvancedKeywordPrompt(text);
-                String result = callOpenAi(prompt, keywordsMaxTokens, "keywords");
+                String prompt = createOptimizedKeywordPrompt(processedText);
+                String result = callOpenAiChat(prompt, 300, 0.2, "keywords");
+                
+                // JSON-Response parsen und formatieren
+                result = processKeywordResponse(result);
                 
                 recordQualityMetrics("keywords", startTime, true, result.length());
-                
-                System.out.println("✅ OpenAI Keywords erfolgreich extrahiert");
+                System.out.println("✅ OpenAI Keywords erfolgreich extrahiert (strukturiert)");
                 return result;
             } catch (Exception e) {
                 recordQualityMetrics("keywords", startTime, false, 0);
                 System.err.println("❌ OpenAI Keyword extraction failed: " + e.getMessage());
-                return getFallbackKeywords(text);
             }
-        } else {
-            System.out.println("⚠️ Kein OpenAI API Key - verwende Fallback für Keywords");
         }
-        return getFallbackKeywords(text);
+        
+        // Verwende TextPreprocessingService für Fallback
+        List<String> keywords = preprocessingService.extractKeywords(processedText, 15);
+        return String.join(", ", keywords);
     }
 
+    /**
+     * OPTIMIERTE Komponenten-Empfehlungen (kontextbezogen)
+     */
     public String suggestComponents(String text) {
         long startTime = System.currentTimeMillis();
         
+        // Text-Preprocessing und Technologie-Erkennung
+        String processedText = preprocessingService.preprocessText(text);
+        Set<String> detectedTechs = detectExistingTechnologies(processedText);
+        
         if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
             try {
-                String prompt = createAdvancedComponentPrompt(text);
-                String result = callOpenAi(prompt, componentsMaxTokens, "components");
+                String prompt = createContextAwareComponentPrompt(processedText, detectedTechs);
+                String result = callOpenAiChat(prompt, 400, 0.4, "components");
+                
+                // Validierung: Keine widersprüchlichen Empfehlungen
+                result = validateComponentSuggestions(result, detectedTechs);
                 
                 recordQualityMetrics("components", startTime, true, result.length());
-                
-                System.out.println("✅ OpenAI Komponenten-Empfehlungen erfolgreich erstellt");
+                System.out.println("✅ OpenAI Komponenten-Empfehlungen (kontextbezogen)");
                 return result;
             } catch (Exception e) {
                 recordQualityMetrics("components", startTime, false, 0);
                 System.err.println("❌ OpenAI Component suggestion failed: " + e.getMessage());
-                return getFallbackComponents(text);
             }
-        } else {
-            System.out.println("⚠️ Kein OpenAI API Key - verwende Fallback für Komponenten");
         }
-        return getFallbackComponents(text);
-    }
-
-    // ========================================
-    // VERBESSERTE PROMPT-METHODEN
-    // ========================================
-
-    private String createAdvancedSummarizationPrompt(String text) {
-        String inputText = text.length() > summaryMaxChars ? 
-            text.substring(0, summaryMaxChars) + "..." : text;
         
-        return String.format(
-            "Du bist ein erfahrener Business-Analyst und Technical Writer. " +
-            "Erstelle eine präzise, professionelle deutsche Zusammenfassung des folgenden Dokuments.\n\n" +
-            
-            "AUFGABE:\n" +
-            "- Identifiziere das Hauptziel und die wichtigsten Aussagen\n" +
-            "- Fokussiere auf konkrete Ergebnisse und Handlungsempfehlungen\n" +
-            "- Verwende klare, geschäftliche Sprache\n" +
-            "- Länge: Exakt 2-3 vollständige Sätze\n\n" +
-            
-            "STIL:\n" +
-            "- Professionell und objektiv\n" +
-            "- Konkret statt abstrakt\n" +
-            "- Handlungsorientiert\n\n" +
-            
-            "DOKUMENT:\n" +
-            "==========\n" +
-            "%s\n" +
-            "==========\n\n" +
-            
-            "ZUSAMMENFASSUNG:",
-            inputText
-        );
-    }
-
-    private String createAdvancedKeywordPrompt(String text) {
-        String inputText = text.length() > keywordsMaxChars ? 
-            text.substring(0, keywordsMaxChars) + "..." : text;
-        
-        return String.format(
-            "Du bist ein KI-Experte für Textanalyse und Informationsextraktion. " +
-            "Extrahiere die wichtigsten Schlüsselwörter aus dem deutschen Text.\n\n" +
-            
-            "AUFGABE:\n" +
-            "- Identifiziere die 12-15 wichtigsten Begriffe\n" +
-            "- Priorisiere: Fachbegriffe, Technologien, Branchen-Terme, Hauptkonzepte\n" +
-            "- Bevorzuge spezifische über allgemeine Begriffe\n" +
-            "- Verwende die Original-Schreibweise aus dem Text\n\n" +
-            
-            "KATEGORIEN (in Priorität):\n" +
-            "1. Technologien und Tools\n" +
-            "2. Fachbegriffe und Methoden\n" +
-            "3. Branchen und Bereiche\n" +
-            "4. Wichtige Konzepte\n\n" +
-            
-            "AUSGABE-FORMAT:\n" +
-            "- NUR die Wörter, durch Kommas getrennt\n" +
-            "- Keine Erklärungen oder zusätzlichen Texte\n" +
-            "- Beispiel: React, Spring Boot, Agile, Kubernetes, REST API\n\n" +
-            
-            "TEXT:\n" +
-            "=====\n" +
-            "%s\n" +
-            "=====\n\n" +
-            
-            "SCHLÜSSELWÖRTER:",
-            inputText
-        );
-    }
-
-    private String createAdvancedComponentPrompt(String text) {
-        String inputText = text.length() > componentsMaxChars ? 
-            text.substring(0, componentsMaxChars) + "..." : text;
-        
-        return String.format(
-            "Du bist ein Senior Software-Architekt mit 10+ Jahren Erfahrung in modernen Tech-Stacks. " +
-            "Analysiere die Projektbeschreibung und empfehle einen optimalen Technologie-Stack für 2025.\n\n" +
-            
-            "ANALYSE-KRITERIEN:\n" +
-            "- Skalierbarkeit und Performance\n" +
-            "- Wartbarkeit und Developer Experience\n" +
-            "- Community-Support und Zukunftssicherheit\n" +
-            "- Kosten-Nutzen-Verhältnis\n\n" +
-            
-            "KATEGORIEN ZU BERÜCKSICHTIGEN:\n" +
-            "- Frontend: Frameworks, UI-Libraries, Build-Tools\n" +
-            "- Backend: Frameworks, APIs, Microservices\n" +
-            "- Datenbank: SQL/NoSQL, Caching, Search\n" +
-            "- Cloud & DevOps: Container, CI/CD, Monitoring\n" +
-            "- Entwicklungstools: Testing, Code-Quality, Documentation\n\n" +
-            
-            "AUSGABE-FORMAT:\n" +
-            "- 8-12 konkrete Technologien\n" +
-            "- Durch Kommas getrennt, keine Erklärungen\n" +
-            "- Priorisiere moderne, bewährte Lösungen\n" +
-            "- Beispiel: Next.js, FastAPI, PostgreSQL, Docker, Kubernetes, TypeScript\n\n" +
-            
-            "PROJEKTBESCHREIBUNG:\n" +
-            "==================\n" +
-            "%s\n" +
-            "==================\n\n" +
-            
-            "EMPFOHLENER TECHNOLOGIE-STACK:",
-            inputText
-        );
+        return getContextAwareFallbackComponents(processedText, detectedTechs);
     }
 
     // ========================================
-    // OPENAI API AUFRUF
+    // OPTIMIERTE PROMPT-ERSTELLUNG
     // ========================================
 
-    private String callOpenAi(String prompt, int maxTokens, String analysisType) {
+    private String createOptimizedSummarizationPrompt(String text) {
+        // Text begrenzen aber intelligent (nicht mitten im Satz abschneiden)
+        String inputText = truncateIntelligently(text, 4000);
+        
+        return String.format("""
+            Analysiere das folgende technische Dokument und erstelle eine STRUKTURIERTE Zusammenfassung.
+            
+            ANFORDERUNGEN:
+            1. **Hauptziel**: Beschreibe das Kernziel in 1-2 Sätzen
+            2. **Technologie-Stack**: Liste die wichtigsten verwendeten Technologien
+            3. **Kernfunktionen**: Die 3 wichtigsten Features/Komponenten
+            4. **Besonderheiten**: Was macht dieses Projekt einzigartig?
+            
+            FORMAT DER AUSGABE:
+            **Projektziel:** [Beschreibung]
+            
+            **Technologien:** [Frontend], [Backend], [Datenbank], [DevOps]
+            
+            **Hauptfunktionen:**
+            - [Funktion 1]
+            - [Funktion 2]
+            - [Funktion 3]
+            
+            **Besonderheit:** [Was hebt das Projekt hervor]
+            
+            DOKUMENT:
+            %s
+            
+            ZUSAMMENFASSUNG:
+            """, inputText);
+    }
+
+    private String createOptimizedKeywordPrompt(String text) {
+        String inputText = truncateIntelligently(text, 3000);
+        
+        // Bereits erkannte technische Begriffe hervorheben
+        Map<String, Object> textAnalysis = preprocessingService.analyzeTextQuality(text);
+        
+        return String.format("""
+            Extrahiere und kategorisiere die wichtigsten Keywords aus diesem technischen Dokument.
+            
+            AUSGABE ALS JSON:
+            {
+                "projekt": ["Projektname", "Firma"],
+                "technologien": {
+                    "frontend": ["Angular 16", "TypeScript"],
+                    "backend": ["Spring Boot", "Java 17"],
+                    "datenbank": ["PostgreSQL", "Elasticsearch"],
+                    "devops": ["Docker", "Kubernetes", "AWS"]
+                },
+                "konzepte": ["Cloud-Native", "Microservices", "REST API"],
+                "priorität_hoch": ["die 5 wichtigsten Keywords"]
+            }
+            
+            REGELN:
+            - Behalte Versionsnummern bei (z.B. "Angular 16")
+            - Gruppiere nach technischen Kategorien
+            - Mindestens 15-20 Keywords insgesamt
+            
+            TEXT:
+            %s
+            
+            JSON-OUTPUT:
+            """, inputText);
+    }
+
+    private String createContextAwareComponentPrompt(String text, Set<String> existingTechs) {
+        String inputText = truncateIntelligently(text, 3000);
+        String existingTechList = String.join(", ", existingTechs);
+        
+        return String.format("""
+            Als Senior Solutions Architect, analysiere das Projekt und empfehle ERGÄNZENDE Technologien.
+            
+            BEREITS VERWENDETE TECHNOLOGIEN (NICHT ersetzen):
+            %s
+            
+            AUFGABE:
+            Empfehle NUR ERGÄNZENDE Tools und Services die den vorhandenen Stack VERBESSERN:
+            - Performance-Optimierung
+            - Monitoring & Observability  
+            - Security-Erweiterungen
+            - Developer Experience Tools
+            - Testing-Frameworks
+            
+            AUSGABE-FORMAT:
+            Monitoring: [Tool1], [Tool2]
+            Caching: [Tool3]
+            Security: [Tool4], [Tool5]
+            Testing: [Tool6]
+            DevTools: [Tool7], [Tool8]
+            
+            WICHTIG: 
+            - KEINE alternativen Frontend-Frameworks wenn Angular verwendet wird
+            - KEINE alternativen Datenbanken wenn PostgreSQL verwendet wird
+            - Nur ERGÄNZUNGEN zum bestehenden Stack
+            
+            PROJEKT:
+            %s
+            
+            EMPFEHLUNGEN:
+            """, existingTechList, inputText);
+    }
+
+    // ========================================
+    // OPTIMIERTER OPENAI API AUFRUF (Chat Completions)
+    // ========================================
+
+    private String callOpenAiChat(String prompt, int maxTokens, double temperature, String type) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(openAiApiKey);
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-3.5-turbo-instruct");
-        requestBody.put("prompt", prompt);
+        requestBody.put("model", openAiModel); // Nutze GPT-4 aus Config
+        requestBody.put("messages", Arrays.asList(
+            Map.of("role", "system", "content", 
+                "Du bist ein Experte für technische Dokumentenanalyse. " +
+                "Antworte präzise, strukturiert und in deutscher Sprache."),
+            Map.of("role", "user", "content", prompt)
+        ));
         requestBody.put("max_tokens", maxTokens);
-        requestBody.put("temperature", 0.3);
-        requestBody.put("top_p", 0.9);
-        requestBody.put("frequency_penalty", 0.1);
+        requestBody.put("temperature", temperature);
+        requestBody.put("top_p", 0.95);
+        requestBody.put("frequency_penalty", 0.2);
         requestBody.put("presence_penalty", 0.1);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("🤖 Rufe OpenAI API auf für: " + analysisType);
+            System.out.println("🤖 Rufe OpenAI Chat API auf (" + openAiModel + ") für: " + type);
             ResponseEntity<Map> response = restTemplate.exchange(
-                OPENAI_URL, HttpMethod.POST, entity, Map.class);
+                OPENAI_CHAT_URL, HttpMethod.POST, entity, Map.class);
             
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 Map<String, Object> body = response.getBody();
                 List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
                 if (choices != null && !choices.isEmpty()) {
-                    String result = (String) choices.get(0).get("text");
+                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                    String result = (String) message.get("content");
                     return result != null ? result.trim() : "Keine Antwort erhalten";
                 }
-            } else {
-                System.err.println("❌ OpenAI API Status: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            System.err.println("❌ HTTP Request to OpenAI failed: " + e.getMessage());
+            System.err.println("❌ OpenAI Chat API Fehler: " + e.getMessage());
             throw e;
         }
         
@@ -273,148 +295,184 @@ public class AiService {
     }
 
     // ========================================
+    // POST-PROCESSING & VALIDIERUNG
+    // ========================================
+
+    private String postProcessSummary(String summary) {
+        // Stelle sicher, dass die Zusammenfassung strukturiert ist
+        if (!summary.contains("**")) {
+            // Füge Struktur hinzu wenn fehlt
+            String[] sentences = summary.split("\\. ");
+            if (sentences.length >= 2) {
+                return String.format(
+                    "**Zusammenfassung:** %s\n\n**Details:** %s",
+                    sentences[0] + ".",
+                    String.join(". ", Arrays.copyOfRange(sentences, 1, sentences.length))
+                );
+            }
+        }
+        return summary;
+    }
+
+    private String processKeywordResponse(String response) {
+        try {
+            // Versuche JSON zu parsen
+            Map<String, Object> keywordMap = objectMapper.readValue(response, Map.class);
+            
+            StringBuilder formatted = new StringBuilder();
+            
+            // Projekt-Keywords
+            if (keywordMap.containsKey("projekt")) {
+                List<String> projekt = (List<String>) keywordMap.get("projekt");
+                formatted.append("Projekt: ").append(String.join(", ", projekt)).append("\n");
+            }
+            
+            // Technologie-Keywords
+            if (keywordMap.containsKey("technologien")) {
+                Map<String, List<String>> techs = (Map<String, List<String>>) keywordMap.get("technologien");
+                List<String> allTechs = new ArrayList<>();
+                techs.values().forEach(allTechs::addAll);
+                formatted.append("Technologien: ").append(String.join(", ", allTechs)).append("\n");
+            }
+            
+            // Konzepte
+            if (keywordMap.containsKey("konzepte")) {
+                List<String> konzepte = (List<String>) keywordMap.get("konzepte");
+                formatted.append("Konzepte: ").append(String.join(", ", konzepte));
+            }
+            
+            return formatted.toString();
+            
+        } catch (Exception e) {
+            // Fallback: Wenn kein JSON, gib Response direkt zurück
+            return response;
+        }
+    }
+
+    private String validateComponentSuggestions(String suggestions, Set<String> existingTechs) {
+        // Entferne widersprüchliche Empfehlungen
+        String validated = suggestions;
+        
+        // Wenn Angular verwendet wird, entferne React/Vue Empfehlungen
+        if (existingTechs.stream().anyMatch(t -> t.toLowerCase().contains("angular"))) {
+            validated = validated.replaceAll("(?i)\\b(React|Vue\\.js|Vue)\\b,?\\s*", "");
+        }
+        
+        // Wenn PostgreSQL verwendet wird, entferne MongoDB Empfehlungen
+        if (existingTechs.stream().anyMatch(t -> t.toLowerCase().contains("postgresql"))) {
+            validated = validated.replaceAll("(?i)\\b(MongoDB|CouchDB)\\b,?\\s*", "");
+        }
+        
+        // Wenn Spring Boot verwendet wird, entferne Express/Django Empfehlungen
+        if (existingTechs.stream().anyMatch(t -> t.toLowerCase().contains("spring"))) {
+            validated = validated.replaceAll("(?i)\\b(Express|Django|FastAPI)\\b,?\\s*", "");
+        }
+        
+        return validated.trim();
+    }
+
+    // ========================================
+    // INTELLIGENTE HILFSMETHODEN
+    // ========================================
+
+    private String truncateIntelligently(String text, int maxLength) {
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        
+        // Finde den letzten vollständigen Satz vor maxLength
+        String truncated = text.substring(0, maxLength);
+        int lastPeriod = truncated.lastIndexOf(".");
+        int lastNewline = truncated.lastIndexOf("\n");
+        
+        int cutPoint = Math.max(lastPeriod, lastNewline);
+        if (cutPoint > maxLength * 0.7) { // Nur wenn nicht zu viel verloren geht
+            return text.substring(0, cutPoint + 1);
+        }
+        
+        return truncated + "...";
+    }
+
+    private Set<String> detectExistingTechnologies(String text) {
+        Set<String> detected = new HashSet<>();
+        String lowerText = text.toLowerCase();
+        
+        // Frontend Frameworks
+        if (lowerText.contains("angular")) detected.add("Angular");
+        if (lowerText.contains("react")) detected.add("React");
+        if (lowerText.contains("vue")) detected.add("Vue.js");
+        
+        // Backend Frameworks
+        if (lowerText.contains("spring boot")) detected.add("Spring Boot");
+        if (lowerText.contains("express")) detected.add("Express.js");
+        if (lowerText.contains("django")) detected.add("Django");
+        
+        // Databases
+        if (lowerText.contains("postgresql")) detected.add("PostgreSQL");
+        if (lowerText.contains("mongodb")) detected.add("MongoDB");
+        if (lowerText.contains("mysql")) detected.add("MySQL");
+        if (lowerText.contains("elasticsearch")) detected.add("Elasticsearch");
+        
+        // DevOps
+        if (lowerText.contains("docker")) detected.add("Docker");
+        if (lowerText.contains("kubernetes")) detected.add("Kubernetes");
+        if (lowerText.contains("aws")) detected.add("AWS");
+        
+        return detected;
+    }
+
+    // ========================================
     // VERBESSERTE FALLBACK-METHODEN
     // ========================================
 
-    private String getFallbackSummary(String text) {
-        if (text.length() < 200) {
-            return text + " [Lokale Analyse - OpenAI nicht verfügbar]";
-        }
+    private String getEnhancedFallbackSummary(String text) {
+        // Nutze TextPreprocessingService für bessere Analyse
+        Map<String, Object> analysis = preprocessingService.analyzeTextQuality(text);
+        List<String> keywords = preprocessingService.extractKeywords(text, 5);
         
-        // Intelligentere Zusammenfassung: Erste und letzte Sätze
+        StringBuilder summary = new StringBuilder();
+        summary.append("**Hauptthemen:** ").append(String.join(", ", keywords)).append("\n");
+        
+        // Extrahiere erste und wichtigste Sätze
         String[] sentences = text.split("\\. ");
-        if (sentences.length >= 3) {
-            String firstSentence = sentences[0] + ".";
-            String lastSentence = sentences[sentences.length - 1];
-            if (!lastSentence.endsWith(".")) lastSentence += ".";
-            
-            return firstSentence + " " + lastSentence + " [Lokale Analyse - OpenAI nicht verfügbar]";
+        if (sentences.length > 0) {
+            summary.append("**Zusammenfassung:** ").append(sentences[0]).append(".");
+            if (sentences.length > 1) {
+                summary.append(" ").append(sentences[sentences.length - 1]);
+            }
         }
         
-        // Fallback: Erste 300 Zeichen
-        return text.substring(0, Math.min(300, text.length())) + "... [Lokale Analyse - OpenAI nicht verfügbar]";
+        summary.append("\n[Lokale Analyse - OpenAI nicht verfügbar]");
+        return summary.toString();
     }
 
-    private String getFallbackKeywords(String text) {
-        String[] words = text.toLowerCase()
-            .replaceAll("[^a-züäöß\\s]", "")
-            .split("\\s+");
+    private String getContextAwareFallbackComponents(String text, Set<String> existingTechs) {
+        Set<String> suggestions = new LinkedHashSet<>();
         
-        Set<String> uniqueKeywords = new HashSet<>();
-        Set<String> techTerms = getTechTerms();
-        
-        // Priorisiere Tech-Begriffe
-        for (String word : words) {
-            if (techTerms.contains(word.toLowerCase()) && word.length() >= 3) {
-                uniqueKeywords.add(capitalizeFirst(word));
-            }
+        // Ergänze basierend auf erkannten Technologien
+        if (existingTechs.contains("Angular")) {
+            suggestions.addAll(Arrays.asList("RxJS", "NgRx", "Angular Material", "Jasmine", "Karma"));
+        }
+        if (existingTechs.contains("Spring Boot")) {
+            suggestions.addAll(Arrays.asList("Spring Security", "Spring Data JPA", "Lombok", "MapStruct"));
+        }
+        if (existingTechs.contains("PostgreSQL")) {
+            suggestions.addAll(Arrays.asList("Redis", "Flyway", "pgAdmin"));
+        }
+        if (existingTechs.contains("Docker")) {
+            suggestions.addAll(Arrays.asList("Docker Compose", "Portainer", "Prometheus", "Grafana"));
         }
         
-        // Füge andere relevante Wörter hinzu
-        for (String word : words) {
-            if (word.length() >= 4 && word.length() <= 15 && 
-                !word.matches(".*[0-9].*") && 
-                !isCommonWord(word) &&
-                uniqueKeywords.size() < 15) {
-                uniqueKeywords.add(capitalizeFirst(word));
-            }
-        }
-        
-        String result = uniqueKeywords.stream()
-            .sorted()
-            .limit(15)
-            .collect(Collectors.joining(", "));
-        
-        return result.isEmpty() ? "Keine Schlüsselwörter gefunden" : result;
-    }
-    
-    private String getFallbackComponents(String text) {
-        text = text.toLowerCase();
-        Set<String> suggestions = new LinkedHashSet<>(); // Ordered set
-        
-        // Erweiterte Technologie-Erkennung
-        Map<String, Set<String>> techCategories = getTechCategories();
-        
-        for (Map.Entry<String, Set<String>> category : techCategories.entrySet()) {
-            for (String keyword : category.getValue()) {
-                if (text.contains(keyword)) {
-                    suggestions.addAll(getTechRecommendations(category.getKey()));
-                }
-            }
-        }
-        
-        // Standard-Empfehlungen falls nichts gefunden
-        if (suggestions.isEmpty()) {
-            suggestions.addAll(Set.of(
-                "React", "Spring Boot", "PostgreSQL", "Docker", 
-                "TypeScript", "REST API", "Git", "Jest"
-            ));
-        }
+        // Allgemeine Ergänzungen
+        suggestions.addAll(Arrays.asList("SonarQube", "GitLab CI/CD", "Swagger/OpenAPI", "Postman"));
         
         return suggestions.stream()
-            .limit(10)
+            .limit(12)
             .collect(Collectors.joining(", "));
     }
 
     // ========================================
-    // HILFSMETHODEN
-    // ========================================
-
-    private Set<String> getTechTerms() {
-        return Set.of(
-            "react", "angular", "vue", "javascript", "typescript", "python", "java", "spring",
-            "docker", "kubernetes", "aws", "azure", "mongodb", "postgresql", "mysql", "redis",
-            "api", "rest", "graphql", "microservices", "devops", "ci/cd", "git", "jenkins",
-            "agile", "scrum", "kanban", "testing", "unit", "integration", "selenium"
-        );
-    }
-    
-    private Map<String, Set<String>> getTechCategories() {
-        Map<String, Set<String>> categories = new HashMap<>();
-        
-        categories.put("web", Set.of("web", "website", "frontend", "backend", "html", "css", "javascript"));
-        categories.put("mobile", Set.of("mobile", "app", "android", "ios", "react native", "flutter"));
-        categories.put("database", Set.of("daten", "database", "sql", "nosql", "speicher", "persistent"));
-        categories.put("cloud", Set.of("cloud", "aws", "azure", "gcp", "serverless", "lambda"));
-        categories.put("ai", Set.of("ai", "ml", "machine learning", "künstliche intelligenz", "chatbot"));
-        categories.put("ecommerce", Set.of("shop", "ecommerce", "payment", "cart", "checkout"));
-        
-        return categories;
-    }
-    
-    private Set<String> getTechRecommendations(String category) {
-        Map<String, Set<String>> recommendations = new HashMap<>();
-        
-        recommendations.put("web", Set.of("React", "Next.js", "TypeScript", "Tailwind CSS"));
-        recommendations.put("mobile", Set.of("React Native", "Flutter", "Expo", "Firebase"));
-        recommendations.put("database", Set.of("PostgreSQL", "MongoDB", "Redis", "Prisma"));
-        recommendations.put("cloud", Set.of("AWS", "Vercel", "Docker", "Terraform"));
-        recommendations.put("ai", Set.of("OpenAI API", "LangChain", "Pinecone", "Hugging Face"));
-        recommendations.put("ecommerce", Set.of("Stripe", "Shopify", "WooCommerce", "Medusa"));
-        
-        return recommendations.getOrDefault(category, new HashSet<>());
-    }
-    
-    private boolean isCommonWord(String word) {
-        Set<String> commonWords = Set.of(
-            "eine", "einer", "eines", "dem", "den", "der", "die", "das", "und", "oder", "aber", 
-            "doch", "sondern", "für", "mit", "bei", "nach", "von", "zu", "an", "auf", "über",
-            "unter", "vor", "hinter", "neben", "zwischen", "durch", "ohne", "gegen", "wird",
-            "werden", "wurde", "worden", "sein", "haben", "hatte", "sind", "waren", "ist", "war",
-            "kann", "könnte", "sollte", "würde", "muss", "soll", "will", "nicht", "auch", "noch",
-            "nur", "schon", "bereits", "immer", "alle", "jede", "jeden", "mehr", "sehr", "dann",
-            "wenn", "dass", "als", "wie", "zum", "zur", "beim", "beim", "sowie", "bzw", "etc"
-        );
-        return commonWords.contains(word.toLowerCase());
-    }
-    
-    private String capitalizeFirst(String word) {
-        if (word == null || word.isEmpty()) return word;
-        return word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase();
-    }
-
-    // ========================================
-    // QUALITÄTS-METRIKEN
+    // QUALITÄTS-METRIKEN (unverändert)
     // ========================================
 
     private void recordQualityMetrics(String analysisType, long startTime, boolean success, int resultLength) {
@@ -431,7 +489,6 @@ public class AiService {
         return Collections.unmodifiableMap(qualityMetrics);
     }
 
-    // Innere Klasse für Metriken
     public static class QualityMetrics {
         private int totalCalls = 0;
         private int successfulCalls = 0;
@@ -459,7 +516,6 @@ public class AiService {
             return successfulCalls > 0 ? (double) totalResultLength / successfulCalls : 0;
         }
 
-        // Getters
         public int getTotalCalls() { return totalCalls; }
         public int getSuccessfulCalls() { return successfulCalls; }
         public LocalDateTime getLastCall() { return lastCall; }

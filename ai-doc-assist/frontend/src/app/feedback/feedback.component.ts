@@ -37,7 +37,7 @@ export class FeedbackComponent implements OnInit {
           // Visuelles Feedback anzeigen
           this.showTemporaryMessage(`Feedback für ${type} gespeichert!`);
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Fehler beim Speichern des Feedbacks:', error);
         }
       });
@@ -64,12 +64,12 @@ export class FeedbackComponent implements OnInit {
 
     this.feedbackService.submitFeedback(this.feedback)
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.feedbackSubmitted = true;
           this.isSubmitting = false;
           console.log('Detailliertes Feedback gespeichert:', response);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.isSubmitting = false;
           console.error('Fehler beim Speichern des detaillierten Feedbacks:', error);
         }

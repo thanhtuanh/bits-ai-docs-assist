@@ -29,7 +29,7 @@ public class DemoRunner implements CommandLineRunner {
         try {
             // OpenAI Status prüfen
             if (openAiApiKey != null && !openAiApiKey.trim().isEmpty()) {
-                System.out.println("🤖 OpenAI API Key konfiguriert - verwende GPT-3.5-turbo");
+                System.out.println("🤖 OpenAI API Key konfiguriert - verwende GPT-4.0-turbo");
             } else {
                 System.out.println("⚠️  Kein OpenAI API Key gefunden - verwende Fallback-Methoden");
             }
