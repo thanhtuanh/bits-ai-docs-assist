@@ -22,6 +22,7 @@ npm-debug.log
 .env.test
 .env.prod
 .env.demo
+env.txt
 
 # Database files
 .h2.database.properties

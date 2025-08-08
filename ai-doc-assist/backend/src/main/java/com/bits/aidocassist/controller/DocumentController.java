@@ -52,7 +52,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @RestController
 @RequestMapping("/api/documents")
-@CrossOrigin(origins = {"http://localhost:4201", "http://localhost:4200", "${CORS_ALLOWED_ORIGIN:http://localhost:4201}"})
 public class DocumentController {
 
     private static final Logger logger = LoggerFactory.getLogger(DocumentController.class);

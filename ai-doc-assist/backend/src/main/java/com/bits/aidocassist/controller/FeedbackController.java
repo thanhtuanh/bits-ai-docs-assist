@@ -21,7 +21,6 @@ import com.bits.aidocassist.service.FeedbackService;
 
 @RestController
 @RequestMapping("/api/feedback")
-@CrossOrigin(origins = {"http://localhost:4201", "http://localhost:4200", "${CORS_ALLOWED_ORIGIN:http://localhost:4201}"})
 public class FeedbackController {
 
     @Autowired
