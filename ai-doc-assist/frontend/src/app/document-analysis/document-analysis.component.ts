@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { timeout, finalize } from 'rxjs/operators';
 import { DocumentService } from '../document.service';
 import { AnalysisResult } from '../document.model';
 
@@ -57,37 +58,47 @@ export class DocumentAnalysisComponent implements OnInit {
     return true;
   }
 
-  async analyzeDocument() {
+  analyzeDocument() {
     if (!this.selectedFile) return;
 
     this.isAnalyzing = true;
     this.analysisProgress = 0;
     this.errorMessage = '';
 
-    try {
-      this.simulateProgress();
+    this.simulateProgress();
 
-      const result = await this.documentService.analyzeDocument(this.selectedFile, this.analysisOptions);
+    this.documentService.analyzeDocument(this.selectedFile, this.analysisOptions)
+      .pipe(
+        timeout(60000), // 60 second timeout
+        finalize(() => this.isAnalyzing = false)
+      )
+      .subscribe({
+        next: (result: any) => {
+          console.log('Document analysis successful:', result);
+          // 🔁 Konvertierung falls Backend Strings liefert
+          if (result.keywords && typeof result.keywords === 'string') {
+            result.keywords = result.keywords.split(',').map((k: string) => k.trim());
+          }
 
-      // 🔁 Konvertierung falls Backend Strings liefert
-      if (result.keywords && typeof result.keywords === 'string') {
-        result.keywords = result.keywords.split(',').map((k: string) => k.trim());
-      }
+          if (result.suggestedComponents && typeof result.suggestedComponents === 'string') {
+            result.suggestedComponents = result.suggestedComponents.split(',').map((c: string) => c.trim());
+          }
 
-      if (result.suggestedComponents && typeof result.suggestedComponents === 'string') {
-        result.suggestedComponents = result.suggestedComponents.split(',').map((c: string) => c.trim());
-      }
-
-      this.analysisResult = this.enhanceAnalysisResult(result);
-      this.analysisProgress = 100;
-      this.saveToHistory(this.analysisResult);
-
-    } catch (error: any) {
-      this.errorMessage = 'Fehler bei der Analyse: ' + (error.message || 'Unbekannter Fehler');
-      console.error('Analysis error:', error);
-    } finally {
-      this.isAnalyzing = false;
-    }
+          this.analysisResult = this.enhanceAnalysisResult(result);
+          this.analysisProgress = 100;
+          this.saveToHistory(this.analysisResult);
+        },
+        error: (error: any) => {
+          console.error('Analysis error:', error);
+          if (error.name === 'TimeoutError') {
+            this.errorMessage = 'Analyse-Timeout: Die Verarbeitung dauert zu lange. Bitte versuchen Sie es mit einer kleineren Datei.';
+          } else if (error.status === 0) {
+            this.errorMessage = 'Verbindungsfehler: Kann den Server nicht erreichen. Bitte prüfen Sie Ihre Internetverbindung.';
+          } else {
+            this.errorMessage = 'Fehler bei der Analyse: ' + (error.message || 'Unbekannter Fehler');
+          }
+        }
+      });
   }
 
   enhanceAnalysisResult(result: AnalysisResult): AnalysisResult {

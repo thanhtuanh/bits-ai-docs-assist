@@ -2,7 +2,7 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map, retry } from 'rxjs/operators';
+import { catchError, map, retry, filter } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 
 @Injectable({
@@ -14,7 +14,18 @@ export class DocumentService {
   constructor(private http: HttpClient) {}
 
   createDocument(formData: FormData): Observable<any> {
-    return this.http.post(`${this.baseUrl}/documents`, formData).pipe(
+    return this.http.post(`${this.baseUrl}/documents`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    }).pipe(
+      map(event => {
+        if (event.type === HttpEventType.Response) {
+          return event.body;
+        }
+        return null;
+      }),
+      filter(response => response !== null),
+      retry(2),
       catchError(this.handleError)
     );
   }
@@ -25,19 +36,25 @@ export class DocumentService {
     );
   }
 
-  analyzeDocument(file: File, options: any): Promise<any> {
+  analyzeDocument(file: File, options: any): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('analysisOptions', JSON.stringify(options)); // ✅ richtiger Param-Name
+    formData.append('analysisOptions', JSON.stringify(options));
 
     return this.http.post(`${this.baseUrl}/documents`, formData, {
       reportProgress: true,
       observe: 'events'
     }).pipe(
-      map(event => (event.type === HttpEventType.Response ? event.body : null)),
+      map(event => {
+        if (event.type === HttpEventType.Response) {
+          return event.body;
+        }
+        return null;
+      }),
+      filter(response => response !== null),
       retry(2),
       catchError(this.handleError)
-    ).toPromise();
+    );
   }
 
   getDocument(id: string): Observable<any> {

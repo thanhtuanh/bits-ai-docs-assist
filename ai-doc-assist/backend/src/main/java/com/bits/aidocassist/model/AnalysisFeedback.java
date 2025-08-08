@@ -10,10 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
-import lombok.Data;
-
 @Entity
-@Data
 public class AnalysisFeedback {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -76,4 +73,149 @@ public class AnalysisFeedback {
     
     @Column(name = "document_type_suggestion")
     private String documentTypeSuggestion; // "BUSINESS", "TECHNICAL", "RESEARCH"
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Document getDocument() {
+        return document;
+    }
+
+    public void setDocument(Document document) {
+        this.document = document;
+    }
+
+    public Integer getSummaryRating() {
+        return summaryRating;
+    }
+
+    public void setSummaryRating(Integer summaryRating) {
+        this.summaryRating = summaryRating;
+    }
+
+    public Integer getKeywordsRating() {
+        return keywordsRating;
+    }
+
+    public void setKeywordsRating(Integer keywordsRating) {
+        this.keywordsRating = keywordsRating;
+    }
+
+    public Integer getComponentsRating() {
+        return componentsRating;
+    }
+
+    public void setComponentsRating(Integer componentsRating) {
+        this.componentsRating = componentsRating;
+    }
+
+    public Integer getOverallRating() {
+        return overallRating;
+    }
+
+    public void setOverallRating(Integer overallRating) {
+        this.overallRating = overallRating;
+    }
+
+    public String getUserComments() {
+        return userComments;
+    }
+
+    public void setUserComments(String userComments) {
+        this.userComments = userComments;
+    }
+
+    public String getSuggestedSummary() {
+        return suggestedSummary;
+    }
+
+    public void setSuggestedSummary(String suggestedSummary) {
+        this.suggestedSummary = suggestedSummary;
+    }
+
+    public String getSuggestedKeywords() {
+        return suggestedKeywords;
+    }
+
+    public void setSuggestedKeywords(String suggestedKeywords) {
+        this.suggestedKeywords = suggestedKeywords;
+    }
+
+    public String getSuggestedComponents() {
+        return suggestedComponents;
+    }
+
+    public void setSuggestedComponents(String suggestedComponents) {
+        this.suggestedComponents = suggestedComponents;
+    }
+
+    public Boolean getSummaryHelpful() {
+        return summaryHelpful;
+    }
+
+    public void setSummaryHelpful(Boolean summaryHelpful) {
+        this.summaryHelpful = summaryHelpful;
+    }
+
+    public Boolean getKeywordsHelpful() {
+        return keywordsHelpful;
+    }
+
+    public void setKeywordsHelpful(Boolean keywordsHelpful) {
+        this.keywordsHelpful = keywordsHelpful;
+    }
+
+    public Boolean getComponentsHelpful() {
+        return componentsHelpful;
+    }
+
+    public void setComponentsHelpful(Boolean componentsHelpful) {
+        this.componentsHelpful = componentsHelpful;
+    }
+
+    public String getUserIp() {
+        return userIp;
+    }
+
+    public void setUserIp(String userIp) {
+        this.userIp = userIp;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getImprovementCategory() {
+        return improvementCategory;
+    }
+
+    public void setImprovementCategory(String improvementCategory) {
+        this.improvementCategory = improvementCategory;
+    }
+
+    public String getDocumentTypeSuggestion() {
+        return documentTypeSuggestion;
+    }
+
+    public void setDocumentTypeSuggestion(String documentTypeSuggestion) {
+        this.documentTypeSuggestion = documentTypeSuggestion;
+    }
 }

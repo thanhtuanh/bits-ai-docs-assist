@@ -9,9 +9,9 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: production
       - key: CORS_ALLOWED_ORIGINS
-        value: https://bits-ai-docs-assist-demo.onrender.com,https://bits-ai-docs-assist.onrender.com
+        value: https://bits-ai-docs-assist-frontend.onrender.com,https://bits-ai-docs-assist-demo.onrender.com
       - key: API_FRONTEND_ORIGIN
-        value: https://bits-ai-docs-assist-demo.onrender.com
+        value: https://bits-ai-docs-assist-frontend.onrender.com
       - key: OPENAI_API_KEY
         sync: false  # Set this manually in Render dashboard
       - key: OPENAI_MODEL

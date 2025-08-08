@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { timeout, finalize } from 'rxjs/operators';
 import { DocumentService } from '../document.service';
 import { environment } from '../../environments/environment';
 
@@ -25,8 +26,91 @@ export class DocumentUploadComponent {
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
+      const file = input.files[0];
+      
+      // Debug logging
+      console.log('File selected:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
+      
+      // Validate file
+      if (file.size === 0) {
+        this.uploadError = 'Die ausgewählte Datei ist leer (0 Bytes). Bitte wählen Sie eine gültige Datei aus.';
+        this.selectedFile = null;
+        return;
+      }
+      
+      // Check file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        this.uploadError = `Die Datei ist zu groß (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximale Größe: 10 MB.`;
+        this.selectedFile = null;
+        return;
+      }
+      
+      // Check file type
+      const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 
+                           'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
+        this.uploadError = `Dateityp "${file.type}" wird nicht unterstützt. Erlaubte Formate: PDF, TXT, DOC, DOCX.`;
+        this.selectedFile = null;
+        return;
+      }
+      
+      this.selectedFile = file;
       this.uploadError = '';
+      
+      // Try to read file preview for additional validation
+      this.previewFile(file);
+      
+      console.log('File validation passed:', {
+        name: file.name,
+        sizeMB: (file.size / 1024 / 1024).toFixed(2),
+        type: file.type
+      });
+    }
+  }
+
+  // Preview file content to validate it's readable
+  private previewFile(file: File) {
+    if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const content = e.target.result;
+        console.log('File preview (first 200 chars):', content.substring(0, 200));
+        
+        if (!content || content.trim().length === 0) {
+          this.uploadError = 'Die Datei scheint leer zu sein oder enthält nur Leerzeichen.';
+          this.selectedFile = null;
+        }
+      };
+      reader.onerror = (e) => {
+        console.error('Error reading file:', e);
+        this.uploadError = 'Fehler beim Lesen der Datei. Die Datei könnte beschädigt sein.';
+        this.selectedFile = null;
+      };
+      reader.readAsText(file);
+    } else if (file.type === 'application/pdf') {
+      // For PDF files, just check if we can read it as ArrayBuffer
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const arrayBuffer = e.target.result;
+        if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+          this.uploadError = 'Die PDF-Datei scheint beschädigt oder leer zu sein.';
+          this.selectedFile = null;
+        } else {
+          console.log('PDF file loaded successfully, size:', arrayBuffer.byteLength, 'bytes');
+        }
+      };
+      reader.onerror = (e) => {
+        console.error('Error reading PDF file:', e);
+        this.uploadError = 'Fehler beim Lesen der PDF-Datei. Die Datei könnte beschädigt sein.';
+        this.selectedFile = null;
+      };
+      reader.readAsArrayBuffer(file);
     }
   }
 
@@ -36,25 +120,114 @@ export class DocumentUploadComponent {
       return;
     }
 
+    // Additional validation before upload
+    const validationResult = this.validateFileForUpload(this.selectedFile);
+    if (!validationResult.isValid) {
+      this.uploadError = validationResult.errorMessage;
+      return;
+    }
+
     this.isProcessing = true;
+    this.uploadError = '';
     const formData = new FormData();
     formData.append('file', this.selectedFile);
 
-    this.documentService.createDocument(formData).subscribe({
-      next: (response: any) => {
-        this.isProcessing = false;
-        // ✅ API Response korrekt verarbeiten
-        if (response && response.document) {
-          this.analysisResult = this.processApiResponse(response.document);
-        } else {
-          this.analysisResult = response; 
-        }
-      },
-      error: (error: any) => {
-        this.isProcessing = false;
-        this.uploadError = `Fehler beim Upload: ${error.message || 'Unbekannter Fehler'}`;
-      }
+    console.log('Starting upload for file:', {
+      name: this.selectedFile.name,
+      size: this.selectedFile.size,
+      type: this.selectedFile.type
     });
+
+    // Add timeout and better error handling
+    this.documentService.createDocument(formData)
+      .pipe(
+        timeout(60000), // 60 second timeout
+        finalize(() => this.isProcessing = false)
+      )
+      .subscribe({
+        next: (response: any) => {
+          console.log('Upload successful:', response);
+          if (response && response.document) {
+            this.analysisResult = this.processApiResponse(response.document);
+          } else {
+            this.analysisResult = response; 
+          }
+        },
+        error: (error: any) => {
+          console.error('Upload error:', error);
+          if (error.name === 'TimeoutError') {
+            this.uploadError = 'Upload-Timeout: Die Verarbeitung dauert zu lange. Bitte versuchen Sie es mit einer kleineren Datei.';
+          } else if (error.status === 0) {
+            this.uploadError = 'Verbindungsfehler: Kann den Server nicht erreichen. Bitte prüfen Sie Ihre Internetverbindung.';
+          } else if (error.status === 413) {
+            this.uploadError = 'Die Datei ist zu groß für den Server. Maximale Größe: 10 MB.';
+          } else if (error.status === 415) {
+            this.uploadError = 'Dateityp wird vom Server nicht unterstützt.';
+          } else {
+            this.uploadError = `Fehler beim Upload: ${error.message || 'Unbekannter Fehler'}`;
+          }
+        }
+      });
+  }
+
+  // Comprehensive file validation
+  private validateFileForUpload(file: File): { isValid: boolean; errorMessage: string } {
+    // Check if file exists and has content
+    if (!file) {
+      return { isValid: false, errorMessage: 'Keine Datei ausgewählt.' };
+    }
+
+    if (file.size === 0) {
+      return { 
+        isValid: false, 
+        errorMessage: 'Die Datei ist leer (0 Bytes). Möglicherweise ist die Datei beschädigt oder wurde nicht korrekt ausgewählt.' 
+      };
+    }
+
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return { 
+        isValid: false, 
+        errorMessage: `Die Datei ist zu groß (${this.formatFileSize(file.size)}). Maximale Größe: 10 MB.` 
+      };
+    }
+
+    // Check file type
+    const allowedTypes = [
+      'application/pdf',
+      'text/plain', 
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/csv',
+      'application/json',
+      'text/markdown'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return { 
+        isValid: false, 
+        errorMessage: `Dateityp "${this.getFileTypeDisplay(file.type)}" wird nicht unterstützt. Erlaubte Formate: PDF, TXT, DOC, DOCX, CSV, JSON, MD.` 
+      };
+    }
+
+    // Check file name
+    if (file.name.length > 255) {
+      return { 
+        isValid: false, 
+        errorMessage: 'Der Dateiname ist zu lang. Maximale Länge: 255 Zeichen.' 
+      };
+    }
+
+    // Additional checks for specific file types
+    if (file.type === 'application/pdf' && file.size < 100) {
+      return { 
+        isValid: false, 
+        errorMessage: 'Die PDF-Datei scheint zu klein oder beschädigt zu sein.' 
+      };
+    }
+
+    return { isValid: true, errorMessage: '' };
   }
 
   analyzeText() {
@@ -64,22 +237,33 @@ export class DocumentUploadComponent {
     }
 
     this.isProcessing = true;
+    this.uploadError = '';
 
-    this.documentService.analyzeText(this.inputText).subscribe({
-      next: (response: any) => {
-        this.isProcessing = false;
-        // ✅ API Response korrekt verarbeiten
-        if (response && response.document) {
-          this.analysisResult = this.processApiResponse(response.document);
-        } else {
-          this.analysisResult = response;
+    this.documentService.analyzeText(this.inputText)
+      .pipe(
+        timeout(60000), // 60 second timeout
+        finalize(() => this.isProcessing = false)
+      )
+      .subscribe({
+        next: (response: any) => {
+          console.log('Text analysis successful:', response);
+          if (response && response.document) {
+            this.analysisResult = this.processApiResponse(response.document);
+          } else {
+            this.analysisResult = response;
+          }
+        },
+        error: (error: any) => {
+          console.error('Text analysis error:', error);
+          if (error.name === 'TimeoutError') {
+            this.uploadError = 'Analyse-Timeout: Die Verarbeitung dauert zu lange. Bitte versuchen Sie es mit einem kürzeren Text.';
+          } else if (error.status === 0) {
+            this.uploadError = 'Verbindungsfehler: Kann den Server nicht erreichen. Bitte prüfen Sie Ihre Internetverbindung.';
+          } else {
+            this.uploadError = `Fehler bei der Textanalyse: ${error.message || 'Unbekannter Fehler'}`;
+          }
         }
-      },
-      error: (error: any) => {
-        this.isProcessing = false;
-        this.uploadError = `Fehler bei der Textanalyse: ${error.message || 'Unbekannter Fehler'}`;
-      }
-    });
+      });
   }
 
   // ✅ Neue Methode zur Verarbeitung der API-Antwort
@@ -161,5 +345,39 @@ export class DocumentUploadComponent {
   submitQuickFeedback(helpful: boolean) {
     console.log('Feedback:', helpful ? 'Hilfreich' : 'Nicht hilfreich');
     alert(helpful ? '👍 Danke für Ihr positives Feedback!' : '👎 Danke für Ihr Feedback. Wir arbeiten an Verbesserungen.');
+  }
+
+  // Helper methods for file display
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  getFileTypeDisplay(mimeType: string): string {
+    const typeMap: { [key: string]: string } = {
+      'application/pdf': 'PDF',
+      'text/plain': 'TXT',
+      'application/msword': 'DOC',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+      'text/csv': 'CSV',
+      'application/json': 'JSON',
+      'text/markdown': 'MD'
+    };
+    
+    return typeMap[mimeType] || mimeType.split('/')[1]?.toUpperCase() || 'Unknown';
+  }
+
+  // Clear selected file
+  clearFile(fileInput: HTMLInputElement) {
+    this.selectedFile = null;
+    this.uploadError = '';
+    this.analysisResult = null;
+    fileInput.value = '';
+    console.log('File cleared');
   }
 }
