@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# 🚀 Improved Render.com Deployment Script
-# This script fixes the common deployment issues
+# 🚀 Render.com Deployment Script - Simplified Domain Names
+# Frontend: https://ai-docs-assist-demo.onrender.com
+# Backend: https://ai-docs-assist.onrender.com
 
 set -e  # Exit on any error
 
-echo "🔧 Starting Render.com deployment with fixes..."
+echo "🔧 Starting Render.com deployment with simplified domain names..."
 
 # Check if required files exist
 if [ ! -f "render.yaml" ]; then
@@ -59,16 +60,21 @@ echo "🧪 Testing configuration..."
 echo "Frontend API URL: $(grep apiUrl frontend/src/environments/environment.prod.ts)"
 echo "Backend CORS: $(grep CORS_ALLOWED_ORIGINS render.yaml)"
 
-echo "🚀 Ready for Render.com deployment!"
+echo "🚀 Ready for Render.com deployment with simplified domain names!"
 echo ""
 echo "📋 Next steps:"
-echo "1. Push changes to your Git repository"
-echo "2. In Render.com dashboard, trigger manual deploy for both services"
-echo "3. Check service logs for any errors"
-echo "4. Test the application at your frontend URL"
+echo "1. Push changes to your Git repository (branch: project-ai-docs-assist)"
+echo "2. In Render.com dashboard, create new services with simplified names:"
+echo "   - Backend: ai-docs-assist"
+echo "   - Frontend: ai-docs-assist-demo"
+echo "3. Set OPENAI_API_KEY in Render.com dashboard"
+echo "4. Test the application at your new frontend URL"
 echo ""
-echo "🔗 Expected URLs:"
-echo "- Frontend: https://bits-ai-docs-assist-frontend.onrender.com"
-echo "- Backend: https://bits-ai-docs-assist-backend.onrender.com"
+echo "🔗 New URLs:"
+echo "- Frontend: https://ai-docs-assist-demo.onrender.com"
+echo "- Backend: https://ai-docs-assist.onrender.com"
 echo ""
-echo "⚠️  Remember to set OPENAI_API_KEY in Render.com dashboard!"
+echo "⚠️  Remember to:"
+echo "- Set OPENAI_API_KEY in Render.com dashboard"
+echo "- Update any bookmarks or links to use new URLs"
+echo "- Old URLs will redirect automatically"

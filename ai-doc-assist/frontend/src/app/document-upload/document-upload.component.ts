@@ -16,12 +16,20 @@ export class DocumentUploadComponent {
   isProcessing = false;
   analysisResult: any = null;
   uploadError = '';
+  activeTab: 'upload' | 'text' = 'upload'; // Tab state
 
   constructor(
     private documentService: DocumentService,
     private http: HttpClient,
     private router: Router
   ) {}
+
+  // Tab management
+  setActiveTab(tab: 'upload' | 'text') {
+    this.activeTab = tab;
+    this.clearError();
+    console.log('Switched to tab:', tab);
+  }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -379,5 +387,75 @@ export class DocumentUploadComponent {
     this.analysisResult = null;
     fileInput.value = '';
     console.log('File cleared');
+  }
+
+  // Clear text input
+  clearText() {
+    this.inputText = '';
+    this.uploadError = '';
+    this.analysisResult = null;
+    console.log('Text cleared');
+  }
+
+  // Clear error messages
+  clearError() {
+    this.uploadError = '';
+  }
+
+  // Load sample text for demonstration
+  loadSampleText() {
+    this.inputText = `# Projektbeschreibung: E-Commerce Platform
+
+## Überblick
+Entwicklung einer modernen E-Commerce-Plattform mit React Frontend und Node.js Backend.
+
+## Technische Anforderungen
+- React.js für das Frontend
+- Node.js mit Express für das Backend
+- MongoDB als Datenbank
+- JWT für Authentifizierung
+- Stripe für Zahlungsabwicklung
+
+## Features
+- Produktkatalog mit Suchfunktion
+- Warenkorb und Checkout-Prozess
+- Benutzerverwaltung
+- Admin-Dashboard
+- Responsive Design
+
+## Zielgruppe
+Kleine bis mittlere Unternehmen, die ihre Produkte online verkaufen möchten.`;
+    
+    console.log('Sample text loaded');
+  }
+
+  // Export analysis results
+  exportResults() {
+    if (!this.analysisResult) return;
+
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      source: this.activeTab === 'upload' ? 'document' : 'text',
+      filename: this.activeTab === 'upload' ? this.selectedFile?.name : 'text-analysis',
+      analysis: this.analysisResult
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analysis_${Date.now()}.json`;
+    link.click();
+    
+    console.log('Results exported');
+  }
+
+  // Start new analysis
+  startNewAnalysis() {
+    this.analysisResult = null;
+    this.uploadError = '';
+    this.selectedFile = null;
+    this.inputText = '';
+    console.log('Started new analysis');
   }
 }
